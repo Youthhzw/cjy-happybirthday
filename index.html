@@ -222,7 +222,7 @@ html, body {
   position: absolute;
   width: var(--nsize);
   height: var(--nsize);
-  padding: clamp(4px, 0.6vw, 6px) clamp(2px, 0.4vw, 4px);
+  padding: clamp(2px, 0.4vw, 4px) clamp(1px, 0.3vw, 3px);
   border-radius: 1px 6px 1px 6px;
   box-shadow: 1px 1px 4px rgba(0,0,0,0.28), 0 3px 8px rgba(0,0,0,0.12);
   cursor: pointer;
@@ -230,15 +230,57 @@ html, body {
   display: flex; align-items: center; justify-content: center;
   text-align: center;
   font-size: var(--nfont);
-  line-height: 1.25;
-  color: #3d2b1f;
-  font-family: "Ma Shan Zheng", "ZCOOL KuaiLe", "KaiTi", "STKaiti", cursive, serif;
+  line-height: 1.2;
+  color: #333;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
   overflow: hidden;
-  word-break: break-word;
+  white-space: nowrap;
   z-index: 1;
   opacity: 0;
   transform: translate(-50%, -50%) rotate(var(--rot)) scale(0);
   will-change: transform, opacity;
+}
+
+/* expanded note overlay */
+.note-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 300;
+  background: rgba(13,2,33,0.85);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.note-overlay.active {
+  opacity: 1; visibility: visible;
+}
+.note-expanded {
+   position: relative;
+   background: #fffef5;
+  background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 100% 1.8em;
+  padding: 2.5rem 2rem;
+  border-radius: 4px 20px 4px 20px;
+  box-shadow: 8px 8px 30px rgba(0,0,0,0.5), 0 0 60px rgba(240,192,96,0.15);
+  max-width: 88vw; max-height: 80vh;
+  overflow-y: auto;
+  font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+  line-height: 1.8;
+  color: #3d2b1f;
+  font-family: "Ma Shan Zheng", "ZCOOL KuaiLe", "KaiTi", cursive, serif;
+  text-align: center;
+  white-space: pre-line;
+  word-break: break-word;
+  cursor: pointer;
+  animation: notePopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.note-expanded::before {
+  content: '📌';
+  position: absolute; top: -10px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  z-index: 2;
 }
 .sticky-note.pop-in {
   animation: notePopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -695,6 +737,11 @@ html, body {
   <div class="notes-title">💌 每一张便利贴，都是想对你说的话</div>
   <div class="notes-heart-container" id="notesHeart"></div>
   <button class="next-stage-btn" onclick="goStage('cake')">点亮蜡烛 🕯️</button>
+</div>
+
+<!-- Note expanded overlay -->
+<div class="note-overlay" id="noteOverlay" onclick="closeNote()">
+  <div class="note-expanded" id="noteExpanded" onclick="event.stopPropagation()"></div>
 </div>
 
 <!-- ===== STAGE 4: TOP-DOWN CAKE ===== -->
@@ -1233,7 +1280,7 @@ function setupStickyNotes() {
   const refCols = 16;
   const cellSize = size / refCols;
   const nsize = (cellSize - 1) + 'px';
-  const nfont = (cellSize * 0.22) + 'px';
+  const nfont = (cellSize * 0.28) + 'px';
 
   const cx = size / 2;
   const cy = size / 2 + size * 0.04;
@@ -1303,6 +1350,13 @@ function setupStickyNotes() {
   });
 
   container.appendChild(docFrag);
+
+  // click → expand full text
+  container.onclick = function(e) {
+    const note = e.target.closest('.sticky-note');
+    if (!note) return;
+    openNote(note.textContent, note.style.background);
+  };
 
   // staggered pop-in via JS — avoids 100+ simultaneous CSS animation-delay tracks
   const allNoteEls = container.querySelectorAll('.sticky-note');
@@ -1506,6 +1560,20 @@ function autoScrollCredits(el) {
     requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
+}
+
+/* ========================================
+   NOTE EXPAND
+   ======================================== */
+function openNote(text, bgColor) {
+  const overlay = document.getElementById('noteOverlay');
+  const el = document.getElementById('noteExpanded');
+  el.textContent = text;
+  el.style.background = bgColor || '#fffef5';
+  overlay.classList.add('active');
+}
+function closeNote() {
+  document.getElementById('noteOverlay').classList.remove('active');
 }
 
 /* ========================================
