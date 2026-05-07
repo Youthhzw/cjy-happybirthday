@@ -782,9 +782,6 @@ html, body {
 
 <!-- ===== AUDIO PLAYER ===== -->
 <div class="audio-player hidden" id="audioBtn" onclick="toggleAudio()" title="音乐">🎵</div>
-<audio id="bgm" loop playsinline preload="auto">
-  <source src="bgm.mp3" type="audio/mpeg">
-</audio>
 
 <script>
 /* ========================================
@@ -1581,44 +1578,54 @@ function closeNote() {
 /* ========================================
    AUDIO
    ======================================== */
-const bgmEl = document.getElementById('bgm');
 const btnAudio = document.getElementById('audioBtn');
-let bgmBlobUrl = null;
+let audioCtx = null;
+let audioBuffer = null;
+let sourceNode = null;
+let gainNode = null;
+let started = false;
 
-// page open → immediately download MP3 into memory in background
-fetch('bgm.mp3').then(r => r.blob()).then(blob => {
-  bgmBlobUrl = URL.createObjectURL(blob);
-  // swap to memory version if not already playing
-  if (bgmEl.paused) bgmEl.src = bgmBlobUrl;
+// page open → download → decode to raw PCM (do expensive decode ONLY once)
+fetch('bgm.mp3').then(r => r.arrayBuffer()).then(buf => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  audioCtx = ctx;
+  return ctx.decodeAudioData(buf);
+}).then(decoded => {
+  audioBuffer = decoded;
 }).catch(() => {});
 
 function initAudio() {
-  if (bgmBlobUrl) {
-    // already cached → use memory copy, zero network
-    bgmEl.src = bgmBlobUrl;
-  }
-  bgmEl.play().then(() => {
-    btnAudio.classList.add('playing');
-    btnAudio.textContent = '🎶';
-  }).catch(() => {
-    setTimeout(() => bgmEl.play().then(() => {
-      btnAudio.classList.add('playing');
-      btnAudio.textContent = '🎶';
-    }).catch(() => {}), 500);
-  });
+  startBgm();
+}
+function startBgm() {
+  if (!audioCtx || !audioBuffer || started) return;
+  started = true;
+  // resume context if suspended (browser policy)
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  sourceNode = audioCtx.createBufferSource();
+  sourceNode.buffer = audioBuffer;
+  sourceNode.loop = true;
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = 1;
+  sourceNode.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  sourceNode.start(0);
+  btnAudio.classList.add('playing');
+  btnAudio.textContent = '🎶';
 }
 document.addEventListener('click', initAudio, { once: true });
 
 function toggleAudio() {
-  if (bgmEl.paused) {
-    bgmEl.play().then(() => {
-      btnAudio.classList.add('playing');
-      btnAudio.textContent = '🎶';
-    }).catch(() => { btnAudio.textContent = '🔇'; });
-  } else {
-    bgmEl.pause();
+  if (!started) { startBgm(); return; }
+  if (!gainNode) return;
+  if (gainNode.gain.value > 0.5) {
+    gainNode.gain.value = 0;
     btnAudio.classList.remove('playing');
-    btnAudio.textContent = '🎵';
+    btnAudio.textContent = '�';
+  } else {
+    gainNode.gain.value = 1;
+    btnAudio.classList.add('playing');
+    btnAudio.textContent = '�';
   }
 }
 
@@ -1629,7 +1636,9 @@ function restartAll() {
   document.getElementById('card3d').classList.remove('flipped');
   document.getElementById('stage-card').classList.add('hidden');
   document.getElementById('audioBtn').classList.add('hidden');
-  document.getElementById('bgm').pause();
+  if (sourceNode) { try { sourceNode.stop(); } catch(e) {} sourceNode = null; }
+  started = false;
+  gainNode = null;
   document.getElementById('audioBtn').classList.remove('playing');
   document.getElementById('audioBtn').textContent = '🎵';
   document.getElementById('nameReveal').classList.remove('active', 'fading');
