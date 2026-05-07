@@ -1583,23 +1583,22 @@ function closeNote() {
    ======================================== */
 const bgmEl = document.getElementById('bgm');
 const btnAudio = document.getElementById('audioBtn');
-let bgmReady = false;
-
-bgmEl.addEventListener('canplaythrough', () => { bgmReady = true; }, { once: true });
-// fallback: mark ready after 8s if canplaythrough didn't fire
-setTimeout(() => { if (!bgmReady) bgmReady = true; }, 8000);
 
 function initAudio() {
-  if (!bgmReady) { setTimeout(initAudio, 300); return; }
   bgmEl.play().then(() => {
     btnAudio.classList.add('playing');
     btnAudio.textContent = '🎶';
-  }).catch(() => {});
+  }).catch(() => {
+    // retry once after a short delay
+    setTimeout(() => bgmEl.play().then(() => {
+      btnAudio.classList.add('playing');
+      btnAudio.textContent = '🎶';
+    }).catch(() => {}), 500);
+  });
 }
 document.addEventListener('click', initAudio, { once: true });
 
 function toggleAudio() {
-  if (!bgmReady) return;
   if (bgmEl.paused) {
     bgmEl.play().then(() => {
       btnAudio.classList.add('playing');
