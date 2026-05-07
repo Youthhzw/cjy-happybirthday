@@ -185,6 +185,47 @@ html, body {
    STAGE 1: COUNTDOWN
    ======================================== */
 #stage-countdown { z-index: 90; }
+
+/* ========================================
+   STAGE 0.5: LOADING BAR
+   ======================================== */
+#stage-loading { z-index: 95; }
+.loading-box {
+  text-align: center;
+  max-width: 380px; width: 85%;
+}
+.loading-text {
+  color: var(--gold);
+  font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+  letter-spacing: 0.1em;
+  margin-bottom: 1.3rem;
+  animation: titleGlow 2.5s ease-in-out infinite;
+}
+.loading-bar-wrap {
+  width: 100%; height: clamp(8px, 1.5vw, 12px);
+  background: rgba(255,255,255,0.08);
+  border-radius: 50px;
+  overflow: hidden;
+  border: 1px solid rgba(240,192,96,0.2);
+}
+.loading-bar {
+  height: 100%; width: 0%;
+  border-radius: 50px;
+  background: linear-gradient(90deg, #f0c060, #ffe9a0, #f0c060);
+  background-size: 200% 100%;
+  animation: barShine 1.5s linear infinite;
+  transition: width 0.3s ease;
+}
+@keyframes barShine {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.loading-pct {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.85rem;
+  margin-top: 0.6rem;
+  letter-spacing: 0.06em;
+}
 .countdown-num {
   font-size: clamp(5rem, 18vw, 10rem);
   font-weight: 900;
@@ -727,7 +768,18 @@ html, body {
   </div>
 </div>
 
-<!-- ===== STAGE 1: COUNTDOWN ===== -->
+<!-- ===== STAGE 1: LOADING ===== -->
+<div class="stage hidden" id="stage-loading">
+  <div class="loading-box">
+    <p class="loading-text">🎁 准备惊喜中...</p>
+    <div class="loading-bar-wrap">
+      <div class="loading-bar" id="loadingBar"></div>
+    </div>
+    <p class="loading-pct" id="loadingPct">0%</p>
+  </div>
+</div>
+
+<!-- ===== STAGE 2: COUNTDOWN ===== -->
 <div class="stage hidden" id="stage-countdown">
   <div class="countdown-num" id="countdownNum">3</div>
 </div>
@@ -787,7 +839,7 @@ html, body {
 /* ========================================
    GLOBAL STATE
    ======================================== */
-const STAGES = ['password','countdown','notes','cake','card'];
+const STAGES = ['password','loading','countdown','notes','cake','card'];
 let currentStage = 'password';
 
 function showStage(name) {
@@ -999,7 +1051,12 @@ function checkPassword() {
   if (pwd === '0322') {
     pwdAttempts = 0;
     document.getElementById('stage-password').classList.add('hidden');
-    startCountdown();
+    if (audioReady) {
+      startCountdown();
+    } else {
+      showStage('loading');
+      waitForAudio();
+    }
   } else {
     pwdAttempts++;
     if (pwdAttempts >= 3) {
@@ -1016,6 +1073,21 @@ function checkPassword() {
 /* ========================================
    STAGE 1: COUNTDOWN
    ======================================== */
+function waitForAudio() {
+  const bar = document.getElementById('loadingBar');
+  const pct = document.getElementById('loadingPct');
+  function poll() {
+    bar.style.width = audioLoadPct + '%';
+    pct.textContent = audioLoadPct + '%';
+    if (audioReady) {
+      setTimeout(() => startCountdown(), 400);
+    } else {
+      requestAnimationFrame(poll);
+    }
+  }
+  poll();
+}
+
 function startCountdown() {
   showStage('countdown');
   const cd = document.getElementById('countdownNum');
@@ -1584,15 +1656,35 @@ let audioBuffer = null;
 let sourceNode = null;
 let gainNode = null;
 let started = false;
+let audioReady = false;
+let audioLoadPct = 0;
 
-// page open → download → decode to raw PCM (do expensive decode ONLY once)
-fetch('bgm.mp3').then(r => r.arrayBuffer()).then(buf => {
+// page open -> download with progress -> decode to PCM
+fetch('bgm.mp3').then(response => {
+  const total = +response.headers.get('Content-Length');
+  const reader = response.body.getReader();
+  const chunks = [];
+  let received = 0;
+  function pump() {
+    return reader.read().then(({ done, value }) => {
+      if (done) { return new Blob(chunks).arrayBuffer(); }
+      chunks.push(value);
+      received += value.length;
+      audioLoadPct = total ? Math.round(received / total * 100) : Math.min(audioLoadPct + 5, 90);
+      return pump();
+    });
+  }
+  return pump();
+}).then(buf => {
+  audioLoadPct = 95;
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   audioCtx = ctx;
   return ctx.decodeAudioData(buf);
 }).then(decoded => {
   audioBuffer = decoded;
-}).catch(() => {});
+  audioLoadPct = 100;
+  audioReady = true;
+}).catch(() => { audioReady = true; });
 
 function initAudio() {
   startBgm();
@@ -1621,11 +1713,11 @@ function toggleAudio() {
   if (gainNode.gain.value > 0.5) {
     gainNode.gain.value = 0;
     btnAudio.classList.remove('playing');
-    btnAudio.textContent = '�';
+    btnAudio.textContent = '\uD83C\uDFB5';
   } else {
     gainNode.gain.value = 1;
     btnAudio.classList.add('playing');
-    btnAudio.textContent = '�';
+    btnAudio.textContent = '\uD83C\uDFB6';
   }
 }
 
@@ -1638,6 +1730,7 @@ function restartAll() {
   document.getElementById('audioBtn').classList.add('hidden');
   if (sourceNode) { try { sourceNode.stop(); } catch(e) {} sourceNode = null; }
   started = false;
+  audioReady = true;
   gainNode = null;
   document.getElementById('audioBtn').classList.remove('playing');
   document.getElementById('audioBtn').textContent = '🎵';
