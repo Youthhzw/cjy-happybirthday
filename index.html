@@ -852,6 +852,9 @@ html, body {
 </div>
 
 <!-- ===== AUDIO PLAYER ===== -->
+<audio id="bgm" loop playsinline preload="auto">
+  <source src="bgm.mp3" type="audio/mpeg">
+</audio>
 <div class="audio-player hidden" id="audioBtn" onclick="toggleAudio()" title="音乐">🎵</div>
 
 <script>
@@ -1649,76 +1652,26 @@ function closeNote() {
 /* ========================================
    AUDIO
    ======================================== */
+const bgmEl = document.getElementById('bgm');
 const btnAudio = document.getElementById('audioBtn');
-const bgmAudio = document.createElement('audio');
-bgmAudio.loop = true;
-bgmAudio.playsInline = true;
-bgmAudio.src = 'bgm.mp3';
-bgmAudio.preload = 'none';
-let bgmRaw = null;     // raw mp3 bytes (downloaded during loader)
-let audioPlaying = false;
 
-// called on first click after loader
 function initAudio() {
-  if (audioPlaying) return;
-  tryPlay();
-}
-
-async function tryPlay() {
-  // path 1: Web Audio (smooth, zero stutter) — only if we have raw bytes
-  if (bgmRaw) {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      if (ctx.state === 'suspended') await ctx.resume();
-      const decoded = await ctx.decodeAudioData(bgmRaw.slice(0));
-      const src = ctx.createBufferSource();
-      src.buffer = decoded;
-      src.loop = true;
-      const gain = ctx.createGain();
-      gain.gain.value = 1;
-      src.connect(gain);
-      gain.connect(ctx.destination);
-      src.start(0);
-      audioPlaying = true;
-      btnAudio.classList.add('playing');
-      btnAudio.textContent = '🎶';
-      btnAudio._ctx = ctx;
-      btnAudio._gain = gain;
-      btnAudio._src = src;
-      return;
-    } catch(e) {}
-  }
-  // path 2: fallback — plain <audio> element
-  try {
-    bgmAudio.currentTime = 0;
-    await bgmAudio.play();
-    audioPlaying = true;
+  bgmEl.play().then(() => {
     btnAudio.classList.add('playing');
     btnAudio.textContent = '🎶';
-  } catch(e) {}
+  }).catch(() => {});
 }
 
 function toggleAudio() {
-  if (!audioPlaying) { tryPlay(); return; }
-  if (btnAudio._gain) {
-    // Web Audio path
-    if (btnAudio._gain.gain.value > 0.5) {
-      btnAudio._gain.gain.value = 0;
-      btnAudio.classList.remove('playing');
-      btnAudio.textContent = '🎵';
-    } else {
-      btnAudio._gain.gain.value = 1;
+  if (bgmEl.paused) {
+    bgmEl.play().then(() => {
       btnAudio.classList.add('playing');
       btnAudio.textContent = '🎶';
-    }
-  } else if (!bgmAudio.paused) {
-    bgmAudio.pause();
+    }).catch(() => {});
+  } else {
+    bgmEl.pause();
     btnAudio.classList.remove('playing');
     btnAudio.textContent = '🎵';
-  } else {
-    bgmAudio.play();
-    btnAudio.classList.add('playing');
-    btnAudio.textContent = '🎶';
   }
 }
 
@@ -1729,11 +1682,7 @@ function restartAll() {
   document.getElementById('card3d').classList.remove('flipped');
   document.getElementById('stage-card').classList.add('hidden');
   document.getElementById('audioBtn').classList.add('hidden');
-  if (btnAudio._src) { try { btnAudio._src.stop(); } catch(e) {} btnAudio._src = null; }
-  if (btnAudio._ctx) { try { btnAudio._ctx.close(); } catch(e) {} btnAudio._ctx = null; }
-  btnAudio._gain = null;
-  bgmAudio.pause();
-  audioPlaying = false;
+  bgmEl.pause();
   document.getElementById('audioBtn').classList.remove('playing');
   document.getElementById('audioBtn').textContent = '🎵';
   document.getElementById('nameReveal').classList.remove('active', 'fading');
@@ -1756,18 +1705,17 @@ function restartAll() {
   const bar = document.getElementById('loaderBar');
   const pct = document.getElementById('loaderPct');
   let displayed = 0;
-  let done = false;
-  const duration = 2500;  // bar animation
+  const duration = 2200;
   const start = performance.now();
 
   function animFrame(now) {
     const elapsed = now - start;
-    const target = done ? 100 : Math.min(92, (elapsed / duration) * 92);
-    displayed += (target - displayed) * 0.12;
-    if (displayed > 99.5 && done) displayed = 100;
-    bar.style.width = Math.min(displayed, target) + '%';
-    pct.textContent = Math.round(Math.min(displayed, target)) + '%';
-    if (displayed < 100 || !done) {
+    const target = Math.min(100, (elapsed / duration) * 100);
+    displayed += (target - displayed) * 0.1;
+    if (displayed > 99.5) displayed = 100;
+    bar.style.width = displayed + '%';
+    pct.textContent = Math.round(displayed) + '%';
+    if (displayed < 100) {
       requestAnimationFrame(animFrame);
     } else {
       setTimeout(() => {
@@ -1775,21 +1723,10 @@ function restartAll() {
         showStage('password');
         pwdInputs[0].focus();
         document.addEventListener('click', initAudio, { once: true });
-      }, 400);
+      }, 350);
     }
   }
   requestAnimationFrame(animFrame);
-
-  // download bgm in background — no stream reader, just get it
-  fetch('bgm.mp3').then(r => r.arrayBuffer()).then(buf => {
-    bgmRaw = buf;
-    done = true;
-  }).catch(() => {
-    done = true;
-  });
-
-  // safety: force done after 15s
-  setTimeout(() => { done = true; }, 15000);
 })();
 
 /* ========================================
