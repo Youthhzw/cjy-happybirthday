@@ -1641,60 +1641,73 @@ function closeNote() {
    AUDIO
    ======================================== */
 const btnAudio = document.getElementById('audioBtn');
-let audioCtx = null;
-let audioBuffer = null;
-let sourceNode = null;
-let gainNode = null;
-let audioState = 'idle'; // idle | starting | playing | paused
+const bgmAudio = document.createElement('audio');
+bgmAudio.loop = true;
+bgmAudio.playsInline = true;
+bgmAudio.src = 'bgm.mp3';
+bgmAudio.preload = 'none';
+let bgmRaw = null;     // raw mp3 bytes (downloaded during loader)
+let audioPlaying = false;
 
+// called on first click after loader
 function initAudio() {
-  if (audioState === 'playing') return;
-  startBgm();
+  if (audioPlaying) return;
+  tryPlay();
 }
-async function startBgm() {
-  if (!audioCtx || !audioBuffer) return;
-  if (audioState === 'starting' || audioState === 'playing') return;
-  audioState = 'starting';
 
+async function tryPlay() {
+  // path 1: Web Audio (smooth, zero stutter) — only if we have raw bytes
+  if (bgmRaw) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') await ctx.resume();
+      const decoded = await ctx.decodeAudioData(bgmRaw.slice(0));
+      const src = ctx.createBufferSource();
+      src.buffer = decoded;
+      src.loop = true;
+      const gain = ctx.createGain();
+      gain.gain.value = 1;
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      src.start(0);
+      audioPlaying = true;
+      btnAudio.classList.add('playing');
+      btnAudio.textContent = '🎶';
+      btnAudio._ctx = ctx;
+      btnAudio._gain = gain;
+      btnAudio._src = src;
+      return;
+    } catch(e) {}
+  }
+  // path 2: fallback — plain <audio> element
   try {
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-    if (sourceNode) {
-      try { sourceNode.stop(); } catch(e) {}
-      sourceNode = null;
-    }
-    sourceNode = audioCtx.createBufferSource();
-    sourceNode.buffer = audioBuffer;
-    sourceNode.loop = true;
-    gainNode = audioCtx.createGain();
-    gainNode.gain.value = 1;
-    sourceNode.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    sourceNode.start(0);
-    audioState = 'playing';
+    bgmAudio.currentTime = 0;
+    await bgmAudio.play();
+    audioPlaying = true;
     btnAudio.classList.add('playing');
     btnAudio.textContent = '🎶';
-  } catch(e) {
-    audioState = 'idle';
-  }
+  } catch(e) {}
 }
 
 function toggleAudio() {
-  if (audioState === 'idle') {
-    startBgm();
-    return;
-  }
-  if (audioState === 'starting') return;
-  if (!gainNode) return;
-  if (gainNode.gain.value > 0.5) {
-    gainNode.gain.value = 0;
-    audioState = 'paused';
+  if (!audioPlaying) { tryPlay(); return; }
+  if (btnAudio._gain) {
+    // Web Audio path
+    if (btnAudio._gain.gain.value > 0.5) {
+      btnAudio._gain.gain.value = 0;
+      btnAudio.classList.remove('playing');
+      btnAudio.textContent = '🎵';
+    } else {
+      btnAudio._gain.gain.value = 1;
+      btnAudio.classList.add('playing');
+      btnAudio.textContent = '🎶';
+    }
+  } else if (!bgmAudio.paused) {
+    bgmAudio.pause();
     btnAudio.classList.remove('playing');
     btnAudio.textContent = '🎵';
   } else {
-    gainNode.gain.value = 1;
-    audioState = 'playing';
+    bgmAudio.play();
     btnAudio.classList.add('playing');
     btnAudio.textContent = '🎶';
   }
@@ -1707,9 +1720,11 @@ function restartAll() {
   document.getElementById('card3d').classList.remove('flipped');
   document.getElementById('stage-card').classList.add('hidden');
   document.getElementById('audioBtn').classList.add('hidden');
-  if (sourceNode) { try { sourceNode.stop(); } catch(e) {} sourceNode = null; }
-  audioState = 'idle';
-  gainNode = null;
+  if (btnAudio._src) { try { btnAudio._src.stop(); } catch(e) {} btnAudio._src = null; }
+  if (btnAudio._ctx) { try { btnAudio._ctx.close(); } catch(e) {} btnAudio._ctx = null; }
+  btnAudio._gain = null;
+  bgmAudio.pause();
+  audioPlaying = false;
   document.getElementById('audioBtn').classList.remove('playing');
   document.getElementById('audioBtn').textContent = '🎵';
   document.getElementById('nameReveal').classList.remove('active', 'fading');
@@ -1755,7 +1770,7 @@ function restartAll() {
   }
   requestAnimationFrame(animFrame);
 
-  // fetch bgm with progress — only drives realProgress
+  // fetch bgm with progress — only store raw bytes for later decoding
   fetch('bgm.mp3').then(response => {
     const total = +response.headers.get('Content-Length');
     const reader = response.body.getReader();
@@ -1772,12 +1787,7 @@ function restartAll() {
     }
     return pump();
   }).then(buf => {
-    realProgress = 98;
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    audioCtx = ctx;
-    return ctx.decodeAudioData(buf);
-  }).then(decoded => {
-    audioBuffer = decoded;
+    bgmRaw = buf;
     realProgress = 100;
   }).catch(() => {
     realProgress = 100;
@@ -1789,7 +1799,8 @@ function restartAll() {
       clearInterval(readyPoll);
       setTimeout(() => {
         loader.classList.add('done');
-        // register audio click listener only AFTER loader is gone
+        showStage('password');
+        pwdInputs[0].focus();
         document.addEventListener('click', initAudio, { once: true });
       }, 400);
     }
