@@ -6,7 +6,7 @@
 <title>🎂 CJY · 生日快乐</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&family=Noto+Serif+SC:wght@400;700&family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Liu+Jian+Mao+Cao&family=Noto+Serif+SC:wght@400;700&family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -605,8 +605,15 @@ html, body {
 .card-back-signature {
   margin-top: 1.5rem;
   color: var(--gold);
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+}
+.sig-cn {
+  font-family: 'Ma Shan Zheng', 'KaiTi', cursive;
+  font-size: 1.1rem;
+}
+.sig-en {
+  font-family: 'Caveat', cursive;
+  font-size: 1.4rem;
 }
 .card-restart {
   margin-top: 1.8rem;
@@ -844,7 +851,7 @@ html, body {
         <h2 class="card-back-name">CJY</h2>
         <div class="card-back-divider"></div>
         <p class="card-back-msg" id="blessingMsg"></p>
-        <p class="card-back-signature">—— 你最好的朋友 HZW</p>
+        <p class="card-back-signature"><span class="sig-cn">—— 你最好的朋友</span> <span class="sig-en">HZW</span></p>
         <button class="card-restart" onclick="restartAll()">✨ 回顾祝福</button>
       </div>
     </div>
@@ -1309,7 +1316,7 @@ const notesContour = [
   '生活副本有框\n你不打？',
   '摸不到塔的\n骷髅兵也会忧郁',
   '宁可越界一试\n不可将就一生',
-  '在最好的年华\n遇见最好的自己',
+  '今天的你\n也是宇宙限量版',
   '有事可以\n给我发消息！',
   '没事也可以\n给我发消息 😊',
   '你值得\n世间一切美好',
@@ -1364,9 +1371,9 @@ const notesFill = [
   '以梦为马\n不负韶华',
   '慢慢来会好的\n你又不差',
   '坚定又清澈\n温柔且辽阔',
-  '愿你像风\n有软肋也有铠甲',
+  '不要着急\n最好的总在不经意间出现',
   '像向日葵\n永远向阳而生',
-  '这世界乱糟糟\n而你干干净净',
+  '运气不好的话\n试试勇气',
   '所有晦暗\n都留给过往',
   '从黎明到黄昏\n阳光胜过一切',
   '希望你继续\n永远好奇',
@@ -1405,10 +1412,10 @@ const notesFill = [
   '无人问津的日子里\n也要默默扎根',
   '愿你往后余生\n暴瘦暴富暴美',
   '你在看风景\n看风景的人在看你',
-  '有趣的灵魂\n万里挑一',
+  '你只管善良\n上天自有衡量',
   '心存阳光\n必有诗和远方',
-  '未来不足惧\n过往不须泣',
-  '星光不问赶路人\n时光不负有心人',
+  '就算步伐很小\n也要步步前进',
+  '今晚月色真美\n风也温柔',
   '纵有疾风起\n人生不言弃',
   '每一个不曾起舞的日子\n都是对生命的辜负',
   '种自己的花\n爱自己的宇宙',
@@ -1670,8 +1677,8 @@ function setupBlessingCard() {
     '愿你的眼睛里永远有星辰，',
     '愿你的脚步永远有方向。',
     '',
-    '烟火向星辰，所愿皆成真。',
-    '不止生日，天天都要快乐。'
+    '把星光揉碎，所愿皆成真。',
+    '不止生日，天天都要快乐！'
   ].join('<br>');
   document.getElementById('blessingMsg').innerHTML = msg;
   document.getElementById('audioBtn').classList.remove('hidden');
