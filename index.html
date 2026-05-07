@@ -1583,13 +1583,24 @@ function closeNote() {
    ======================================== */
 const bgmEl = document.getElementById('bgm');
 const btnAudio = document.getElementById('audioBtn');
+let bgmBlobUrl = null;
+
+// page open → immediately download MP3 into memory in background
+fetch('bgm.mp3').then(r => r.blob()).then(blob => {
+  bgmBlobUrl = URL.createObjectURL(blob);
+  // swap to memory version if not already playing
+  if (bgmEl.paused) bgmEl.src = bgmBlobUrl;
+}).catch(() => {});
 
 function initAudio() {
+  if (bgmBlobUrl) {
+    // already cached → use memory copy, zero network
+    bgmEl.src = bgmBlobUrl;
+  }
   bgmEl.play().then(() => {
     btnAudio.classList.add('playing');
     btnAudio.textContent = '🎶';
   }).catch(() => {
-    // retry once after a short delay
     setTimeout(() => bgmEl.play().then(() => {
       btnAudio.classList.add('playing');
       btnAudio.textContent = '🎶';
