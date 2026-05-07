@@ -390,6 +390,14 @@ html, body {
   pointer-events: none;
   text-align: center;
   padding: 0 1rem;
+  margin-bottom: 0.15rem;
+}
+.notes-subtitle {
+  font-size: clamp(0.75rem, 1.8vw, 0.95rem);
+  color: rgba(240,192,96,0.55);
+  letter-spacing: 0.06em;
+  text-align: center;
+  pointer-events: none;
   margin-bottom: clamp(0.3rem, 1.5vw, 0.8rem);
 }
 
@@ -797,6 +805,7 @@ html, body {
 <!-- ===== STAGE 3: STICKY NOTES HEART ===== -->
 <div class="stage hidden" id="stage-notes">
   <div class="notes-title">💌 每一张便利贴，都是想对你说的话</div>
+  <div class="notes-subtitle">可以点开看看~</div>
   <div class="notes-heart-container" id="notesHeart"></div>
   <button class="next-stage-btn" onclick="goStage('cake')">点亮蜡烛 🕯️</button>
 </div>
