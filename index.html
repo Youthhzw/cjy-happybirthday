@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🎂 CJY · 生日快乐</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&family=Noto+Serif+SC:wght@400;700&family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --deep-purple: #0d0221;
+  --mid-purple: #1a0a3e;
+  --gold: #f0c060;
+  --gold-bright: #ffd700;
+  --white-soft: #f5f0ff;
+  --shadow-gold: 0 0 30px rgba(240,192,96,0.3);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  background: var(--deep-purple);
+  color: var(--white-soft);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ========================================
+   STAR BACKGROUND CANVAS
+   ======================================== */
+#starsCanvas {
+  position: fixed; top: 0; left: 0; z-index: 1;
+  pointer-events: none;
+}
+
+/* ========================================
+   CSS CONFETTI (constant falling)
+   ======================================== */
+.confetti-container {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 5; pointer-events: none; overflow: hidden;
+}
+.confetti-piece {
+  position: absolute; top: -30px;
+  animation: confettiFall linear forwards;
+  opacity: 0.7;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg) scale(0.3); opacity: 0; }
+}
+
+/* ========================================
+   FLOATING BALLOONS
+   ======================================== */
+.balloons-layer {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 6; pointer-events: none; overflow: hidden;
+}
+.balloon {
+  position: absolute; bottom: -80px;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  animation: balloonRise linear forwards;
+  opacity: 0.65;
+}
+@keyframes balloonRise {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); }
+  25% { transform: translateY(-25vh) translateX(20px) rotate(5deg); }
+  50% { transform: translateY(-50vh) translateX(-15px) rotate(-3deg); }
+  75% { transform: translateY(-75vh) translateX(10px) rotate(4deg); }
+  100% { transform: translateY(-110vh) translateX(-5px) rotate(-5deg); }
+}
+
+/* ========================================
+   SPARKLE CURSOR TRAIL
+   ======================================== */
+.sparkle {
+  position: fixed; pointer-events: none; z-index: 300;
+  animation: sparklePop 0.7s ease-out forwards;
+  font-size: 0.9rem;
+}
+@keyframes sparklePop {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0) translateY(-30px); opacity: 0; }
+}
+
+/* ========================================
+   STAGE WRAPPER
+   ======================================== */
+.stage {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 10;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+.stage.hidden {
+  opacity: 0; visibility: hidden;
+  pointer-events: none;
+}
+
+/* ========================================
+   STAGE 0: PASSWORD GATE
+   ======================================== */
+#stage-password {
+  z-index: 100;
+  background: radial-gradient(ellipse at center, rgba(26,10,62,0.7) 0%, rgba(13,2,33,0.85) 100%);
+  backdrop-filter: blur(6px);
+}
+.password-container {
+  text-align: center;
+  padding: 2rem;
+  max-width: 420px; width: 90%;
+}
+.password-title {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.06em;
+  animation: titleGlow 3s ease-in-out infinite;
+}
+@keyframes titleGlow {
+  0%,100% { text-shadow: 0 0 10px rgba(240,192,96,0.4), 0 0 30px rgba(240,192,96,0.2); }
+  50% { text-shadow: 0 0 20px rgba(240,192,96,0.7), 0 0 50px rgba(240,192,96,0.4), 0 0 80px rgba(240,192,96,0.15); }
+}
+.password-subtitle {
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: rgba(245,240,255,0.55);
+  margin-bottom: 2rem;
+  letter-spacing: 0.04em;
+}
+.password-input-group {
+  display: flex; gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.password-dot {
+  width: clamp(42px, 10vw, 56px);
+  height: clamp(50px, 12vw, 64px);
+  border: 2px solid rgba(240,192,96,0.35);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  color: var(--gold);
+  font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+  text-align: center;
+  outline: none;
+  caret-color: var(--gold);
+  transition: all 0.3s ease;
+}
+.password-dot:focus {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 18px rgba(240,192,96,0.35);
+  background: rgba(255,255,255,0.08);
+}
+.password-hint {
+  font-size: 0.82rem;
+  color: rgba(245,240,255,0.4);
+  margin-bottom: 1.8rem;
+}
+.password-btn {
+  padding: 0.7rem 2.5rem;
+  border: none; border-radius: 50px;
+  background: linear-gradient(135deg, #7b4ab0, #c77d30);
+  color: #fff; font-size: 1rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(160,100,60,0.3);
+}
+.password-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(160,100,60,0.45); }
+.password-btn:active { transform: scale(0.96); }
+.password-error {
+  color: #ff6b6b; font-size: 0.85rem;
+  margin-top: 1rem; min-height: 1.2em;
+}
+
+/* ========================================
+   STAGE 1: COUNTDOWN
+   ======================================== */
+#stage-countdown { z-index: 90; }
+.countdown-num {
+  font-size: clamp(5rem, 18vw, 10rem);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 60px rgba(240,192,96,0.5), 0 0 120px rgba(240,192,96,0.3);
+  animation: countPop 0.7s ease-out;
+}
+@keyframes countPop {
+  0% { transform: scale(2); opacity: 0; filter: blur(10px); }
+  50% { transform: scale(0.9); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); }
+}
+
+/* ========================================
+   STAGE 2: FIREWORKS
+   ======================================== */
+#fireworksCanvas {
+  position: fixed; top: 0; left: 0; z-index: 80;
+  pointer-events: none;
+}
+
+/* ========================================
+   STAGE 3: STICKY NOTES HEART
+   ======================================== */
+#stage-notes {
+  z-index: 70;
+  background: radial-gradient(ellipse at center, rgba(26,10,62,0.7) 0%, rgba(13,2,33,0.9) 100%);
+}
+.notes-heart-container {
+  position: relative;
+  width: min(92vw, 92vh, 700px);
+  height: min(92vw, 92vh, 700px);
+}
+.sticky-note {
+  position: absolute;
+  width: var(--nsize);
+  height: var(--nsize);
+  padding: clamp(4px, 0.6vw, 6px) clamp(2px, 0.4vw, 4px);
+  border-radius: 1px 6px 1px 6px;
+  box-shadow: 1px 1px 4px rgba(0,0,0,0.28), 0 3px 8px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.3s ease;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  font-size: var(--nfont);
+  line-height: 1.25;
+  color: #3d2b1f;
+  font-family: "Ma Shan Zheng", "ZCOOL KuaiLe", "KaiTi", "STKaiti", cursive, serif;
+  overflow: hidden;
+  word-break: break-word;
+  z-index: 1;
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(var(--rot)) scale(0);
+  will-change: transform, opacity;
+}
+.sticky-note.pop-in {
+  animation: notePopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.sticky-note.floating {
+  animation: notePopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             noteFloat 3s ease-in-out infinite;
+  animation-delay: 0s, var(--fdelay);
+}
+/* folded corner */
+.sticky-note::after {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 0 clamp(6px, 1.2vw, 10px) clamp(6px, 1.2vw, 10px);
+  border-color: transparent transparent rgba(0,0,0,0.08) transparent;
+  pointer-events: none;
+}
+/* pin */
+.sticky-note::before {
+  content: '📌';
+  position: absolute;
+  top: -7px; left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  font-size: clamp(0.4rem, 0.9vw, 0.6rem);
+  z-index: 2; opacity: 0.75;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+  pointer-events: none;
+}
+.sticky-note.no-pin::before { display: none; }
+
+.sticky-note:hover {
+  z-index: 99;
+  transform: translate(-50%, -50%) rotate(0deg) scale(1.6) !important;
+  box-shadow: 6px 6px 20px rgba(0,0,0,0.4), 0 10px 30px rgba(240,192,96,0.3);
+  animation-play-state: paused;
+}
+
+@keyframes notePopIn {
+  0% { transform: translate(-50%, -50%) rotate(var(--rot)) scale(0); opacity: 0; }
+  55% { transform: translate(-50%, -50%) rotate(var(--rot)) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); opacity: 1; }
+}
+@keyframes noteFloat {
+  0%,100% { transform: translate(-50%, -50%) rotate(var(--rot)) translateY(0); }
+  50% { transform: translate(-50%, -50%) rotate(var(--rot)) translateY(-4px); }
+}
+
+.notes-title {
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  animation: titleGlow 3s ease-in-out infinite;
+  pointer-events: none;
+  text-align: center;
+  padding: 0 1rem;
+  margin-bottom: clamp(0.3rem, 1.5vw, 0.8rem);
+}
+
+/* ========================================
+   STAGE 4: TOP-DOWN CAKE + 22 CANDLES
+   ======================================== */
+#stage-cake {
+  z-index: 60;
+  background: radial-gradient(ellipse at center, rgba(26,10,62,0.5) 0%, rgba(13,2,33,0.85) 100%);
+}
+.cake-scene {
+  perspective: 800px;
+  width: min(92vw, 460px);
+  height: min(92vw, 460px);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.cake-topdown {
+  position: relative;
+  width: min(70vw, 340px);
+  height: min(70vw, 340px);
+  transform: rotateX(18deg);
+  animation: cakeBob 4s ease-in-out infinite;
+  cursor: pointer;
+}
+@keyframes cakeBob {
+  0%,100% { transform: rotateX(18deg) translateY(0); }
+  50% { transform: rotateX(18deg) translateY(-10px); }
+}
+/* plate */
+.cake-plate {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 98%; height: 98%; border-radius: 50%;
+  background: radial-gradient(circle, #f5f5f5 0%, #e0e0e0 60%, #ccc 100%);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+}
+/* cake layers — concentric circles */
+.cake-ring {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+.cake-ring.r1 {
+  width: 85%; height: 85%;
+  background: radial-gradient(circle at 45% 40%, #fce4d6, #d4956b);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+}
+.cake-ring.r2 {
+  width: 66%; height: 66%;
+  background: radial-gradient(circle at 55% 45%, #fbe9d7, #c8956e);
+}
+.cake-ring.r3 {
+  width: 47%; height: 47%;
+  background: radial-gradient(circle at 48% 42%, #fff5eb, #e0b898);
+}
+/* frosting ring — wavy border between layers */
+.frosting-ring {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: clamp(3px, 0.7vw, 6px) dashed rgba(255,245,235,0.75);
+  pointer-events: none;
+}
+.frosting-ring.fr1 { width: 85%; height: 85%; }
+.frosting-ring.fr2 { width: 66%; height: 66%; }
+/* cream swirl on top */
+.cream-swirl {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20%; height: 20%; border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #ff8fab, #ff6b9d);
+  box-shadow: 0 0 12px rgba(255,107,157,0.3);
+}
+/* sprinkles */
+.sprinkle {
+  position: absolute; border-radius: 2px;
+  pointer-events: none;
+}
+/* candles */
+.candle-item {
+  position: absolute;
+  width: clamp(5px, 1.2vw, 8px);
+  height: clamp(16px, 4vw, 28px);
+  background: linear-gradient(180deg, #fff, #ffe0e0, #ffb3c0);
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  transition: background 0.4s, opacity 0.5s;
+  z-index: 2;
+}
+.candle-item.out {
+  background: linear-gradient(180deg, #bbb, #999, #777);
+}
+.flame {
+  position: absolute;
+  top: clamp(-12px, -3vw, -20px); left: 50%;
+  transform: translateX(-50%);
+  width: clamp(8px, 2vw, 14px);
+  height: clamp(12px, 3vw, 20px);
+  background: radial-gradient(ellipse at 50% 80%, #fff 10%, #ffd700 40%, #ff9500 70%, #ff4500 100%);
+  border-radius: 50% 50% 30% 30%;
+  animation: flameLick 0.2s ease-in-out infinite alternate;
+  box-shadow: 0 0 8px rgba(255,149,0,0.6), 0 0 18px rgba(255,215,0,0.3);
+  pointer-events: none;
+}
+@keyframes flameLick {
+  0% { transform: translateX(-50%) scale(1, 1) rotate(-2deg); }
+  100% { transform: translateX(-50%) scale(1.2, 0.7) rotate(3deg); }
+}
+.flame.out {
+  animation: none;
+  opacity: 0;
+  transform: translateX(-50%) scale(0);
+  transition: all 0.5s ease;
+}
+
+.cake-hint {
+  position: absolute; bottom: -2.5rem; left: 50%;
+  transform: translateX(-50%);
+  color: var(--gold);
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
+  animation: hintPulse 2s ease-in-out infinite;
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: center;
+}
+@keyframes hintPulse {
+  0%,100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ========================================
+   STAGE 5: BLESSING CARD
+   ======================================== */
+#stage-card {
+  z-index: 50;
+  background: radial-gradient(ellipse at center, rgba(26,10,62,0.6) 0%, rgba(13,2,33,0.92) 100%);
+}
+.card-scene {
+  perspective: 1200px;
+  width: min(88vw, 450px);
+  height: min(70vh, 520px);
+}
+.card-3d {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card-3d.flipped { transform: rotateY(180deg); }
+.card-face {
+  position: absolute; width: 100%; height: 100%;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 2rem clamp(1.2rem, 4vw, 2.5rem);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+}
+.card-front {
+  background: linear-gradient(145deg, #2d1b69, #1a0a3e);
+  border: 1px solid rgba(240,192,96,0.25);
+  box-shadow: 0 0 40px rgba(160,100,60,0.2), inset 0 0 40px rgba(240,192,96,0.05);
+  cursor: pointer;
+  gap: 1.2rem;
+}
+.card-front-icon { font-size: clamp(3rem, 8vw, 5rem); }
+.card-front-text {
+  color: var(--gold);
+  font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+  letter-spacing: 0.06em;
+}
+.card-front-hint {
+  color: rgba(245,240,255,0.4);
+  font-size: 0.8rem;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+.card-back {
+  background: linear-gradient(160deg, #2a1550, #1a0a3e, #140830);
+  border: 1px solid rgba(240,192,96,0.35);
+  box-shadow: 0 0 50px rgba(160,100,60,0.25), inset 0 0 30px rgba(240,192,96,0.06);
+  transform: rotateY(180deg);
+  overflow-y: auto;
+  gap: 1rem;
+  justify-content: flex-start;
+  padding-top: 2.5rem;
+}
+.card-back-name {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  color: var(--gold-bright);
+  margin-bottom: 0.3rem;
+  animation: titleGlow 3s ease-in-out infinite;
+}
+.card-back-divider {
+  width: 60px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 0 auto 1rem;
+}
+.card-back-msg {
+  font-size: clamp(0.9rem, 2vw, 1.05rem);
+  line-height: 2;
+  color: var(--white-soft);
+  letter-spacing: 0.03em;
+}
+.card-back-signature {
+  margin-top: 1.5rem;
+  color: var(--gold);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+.card-restart {
+  margin-top: 1.8rem;
+  padding: 0.6rem 2rem;
+  border: 1px solid rgba(240,192,96,0.35);
+  border-radius: 50px;
+  background: rgba(26,10,62,0.5);
+  color: var(--gold);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.card-restart:hover {
+  background: rgba(60,30,110,0.6);
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 16px rgba(240,192,96,0.25);
+}
+
+/* ========================================
+   AUDIO PLAYER
+   ======================================== */
+.audio-player {
+  position: fixed; bottom: 16px; right: 16px;
+  z-index: 200;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(26,10,62,0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(240,192,96,0.3);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+}
+.audio-player:hover { border-color: var(--gold-bright); box-shadow: 0 0 16px rgba(240,192,96,0.3); }
+.audio-player.playing { border-color: var(--gold-bright); animation: audioPulse 1.5s ease-in-out infinite; }
+@keyframes audioPulse {
+  0%,100% { box-shadow: 0 0 12px rgba(240,192,96,0.2); }
+  50% { box-shadow: 0 0 28px rgba(240,192,96,0.5); }
+}
+
+/* ========================================
+   NEXT BUTTON
+   ======================================== */
+.next-stage-btn {
+  padding: 0.7rem 2rem;
+  border: 1px solid rgba(240,192,96,0.4);
+  border-radius: 50px;
+  background: rgba(26,10,62,0.6);
+  backdrop-filter: blur(6px);
+  color: var(--gold);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1.5rem;
+}
+.next-stage-btn:hover {
+  background: rgba(60,30,110,0.7);
+  border-color: var(--gold-bright);
+  box-shadow: var(--shadow-gold);
+}
+
+/* ========================================
+   NAME REVEAL OVERLAY
+   ======================================== */
+.name-reveal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 85; pointer-events: none;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: clamp(10px, 2vw, 20px);
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.8s ease;
+}
+.name-reveal.active {
+  opacity: 1; visibility: visible;
+}
+.name-reveal .nr-line1 {
+  font-family: "Liu Jian Mao Cao", "Ma Shan Zheng", "KaiTi", cursive, serif;
+  font-size: clamp(5rem, 18vw, 9rem);
+  color: #ffe9a0;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 30px rgba(240,192,96,0.2), 0 0 60px rgba(240,192,96,0.08);
+  animation: nrFade 5s ease-out both;
+}
+.name-reveal .nr-line2 {
+  font-family: "Noto Serif SC", "STSong", "SimSun", serif;
+  font-size: clamp(1.8rem, 6vw, 3rem);
+  color: #f5f0ff;
+  letter-spacing: 0.25em;
+  text-shadow: 0 0 15px rgba(240,192,96,0.15);
+  animation: nrFade 5s ease-out 1s both;
+}
+.name-reveal .nr-hearts {
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  letter-spacing: 0.3em;
+  animation: nrFade 5s ease-out 2s both;
+}
+.name-reveal.fading {
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+@keyframes nrFade {
+  0% { opacity: 0; filter: blur(6px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+
+/* ========================================
+   CELEBRATION BURST OVERLAY
+   ======================================== */
+.celebrate-burst {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 250; pointer-events: none;
+  display: none;
+  justify-content: center; align-items: center;
+  font-size: clamp(3rem, 10vw, 6rem);
+  animation: burstAnim 2s ease-out forwards;
+}
+.celebrate-burst.active { display: flex; }
+@keyframes burstAnim {
+  0% { transform: scale(0.3); opacity: 0; }
+  20% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 480px) {
+  .password-container { padding: 1.2rem; }
+  .card-scene { height: min(60vh, 420px); }
+  .cake-scene { height: min(60vw, 380px); }
+}
+
+@media (min-width: 1200px) {
+  .notes-heart-container { width: 680px; height: 680px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="starsCanvas"></canvas>
+<canvas id="fireworksCanvas"></canvas>
+
+<!-- CSS Confetti Layer -->
+<div class="confetti-container" id="confettiLayer"></div>
+
+<!-- Floating Balloons Layer -->
+<div class="balloons-layer" id="balloonsLayer"></div>
+
+<!-- Name Reveal -->
+<div class="name-reveal" id="nameReveal">
+  <div class="nr-line1">CJY</div>
+  <div class="nr-line2">生日快乐！</div>
+  <div class="nr-hearts">💛✨💛</div>
+</div>
+
+<!-- Celebration Burst -->
+<div class="celebrate-burst" id="celebrateBurst">🎉🎊🎉</div>
+
+<!-- ===== STAGE 0: PASSWORD ===== -->
+<div class="stage" id="stage-password">
+  <div class="password-container">
+    <h1 class="password-title">✨ 秘密入口 ✨</h1>
+    <p class="password-subtitle">输入密码，开启一段专属惊喜</p>
+    <div class="password-input-group">
+      <input type="password" class="password-dot" maxlength="1" inputmode="numeric" id="pwd1">
+      <input type="password" class="password-dot" maxlength="1" inputmode="numeric" id="pwd2">
+      <input type="password" class="password-dot" maxlength="1" inputmode="numeric" id="pwd3">
+      <input type="password" class="password-dot" maxlength="1" inputmode="numeric" id="pwd4">
+    </div>
+    <p class="password-hint">💡 一个特别的四位数日期</p>
+    <button class="password-btn" onclick="checkPassword()">解 锁 惊 喜</button>
+    <p class="password-error" id="pwdError"></p>
+  </div>
+</div>
+
+<!-- ===== STAGE 1: COUNTDOWN ===== -->
+<div class="stage hidden" id="stage-countdown">
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<!-- ===== STAGE 3: STICKY NOTES HEART ===== -->
+<div class="stage hidden" id="stage-notes">
+  <div class="notes-title">💌 每一张便利贴，都是想对你说的话</div>
+  <div class="notes-heart-container" id="notesHeart"></div>
+  <button class="next-stage-btn" onclick="goStage('cake')">点亮蜡烛 🕯️</button>
+</div>
+
+<!-- ===== STAGE 4: TOP-DOWN CAKE ===== -->
+<div class="stage hidden" id="stage-cake">
+  <div class="cake-scene">
+    <div class="cake-topdown" id="cakeTopdown">
+      <div class="cake-plate"></div>
+      <div class="cake-ring r1"></div>
+      <div class="frosting-ring fr1"></div>
+      <div class="cake-ring r2"></div>
+      <div class="frosting-ring fr2"></div>
+      <div class="cake-ring r3"></div>
+      <div class="cream-swirl"></div>
+    </div>
+    <div class="cake-hint" id="cakeHint">🕯️ 点一下蛋糕，吹灭所有蜡烛，许个愿吧~</div>
+  </div>
+</div>
+
+<!-- ===== STAGE 5: BLESSING CARD ===== -->
+<div class="stage hidden" id="stage-card">
+  <div class="card-scene">
+    <div class="card-3d" id="card3d">
+      <div class="card-face card-front" onclick="flipCard()">
+        <div class="card-front-icon">💌</div>
+        <p class="card-front-text">致 最亲爱的 CJY</p>
+        <p class="card-front-hint">点击打开 ✨</p>
+      </div>
+      <div class="card-face card-back">
+        <h2 class="card-back-name">CJY</h2>
+        <div class="card-back-divider"></div>
+        <p class="card-back-msg" id="blessingMsg"></p>
+        <p class="card-back-signature">—— 你最好的朋友 HZW</p>
+        <button class="card-restart" onclick="restartAll()">✨ 回顾祝福</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AUDIO PLAYER ===== -->
+<div class="audio-player hidden" id="audioBtn" onclick="toggleAudio()" title="音乐">🎵</div>
+<audio id="bgm" loop preload="auto">
+  <source src="bgm.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* ========================================
+   GLOBAL STATE
+   ======================================== */
+const STAGES = ['password','countdown','notes','cake','card'];
+let currentStage = 'password';
+
+function showStage(name) {
+  STAGES.forEach(s => {
+    const el = document.getElementById('stage-' + s);
+    if (s === name) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+  currentStage = name;
+}
+
+function goStage(name) {
+  showStage(name);
+  if (name === 'cake') setupCake();
+  if (name === 'card') { document.getElementById('card3d').classList.remove('flipped'); }
+}
+
+/* ========================================
+   STARS BACKGROUND
+   ======================================== */
+const starsCanvas = document.getElementById('starsCanvas');
+const starsCtx = starsCanvas.getContext('2d');
+let stars = [], shootingStars = [];
+
+function resizeStars() {
+  starsCanvas.width = window.innerWidth;
+  starsCanvas.height = window.innerHeight;
+}
+resizeStars();
+window.addEventListener('resize', () => { resizeStars(); resizeFireworks(); });
+
+function createStar() {
+  return {
+    x: Math.random() * starsCanvas.width,
+    y: Math.random() * starsCanvas.height,
+    r: Math.random() * 2.2 + 0.5,
+    twinkleSpeed: Math.random() * 0.015 + 0.005,
+    twinkleOffset: Math.random() * Math.PI * 2,
+    opacity: Math.random() * 0.4 + 0.6
+  };
+}
+function createShootingStar() {
+  const fromLeft = Math.random() > 0.5;
+  return {
+    x: fromLeft ? Math.random() * 200 : starsCanvas.width - Math.random() * 200,
+    y: Math.random() * starsCanvas.height * 0.6,
+    vx: fromLeft ? Math.random() * 4 + 3 : -(Math.random() * 4 + 3),
+    vy: Math.random() * 1.5 + 0.5,
+    len: Math.random() * 80 + 40,
+    life: 1,
+    decay: Math.random() * 0.01 + 0.008
+  };
+}
+for (let i = 0; i < 350; i++) stars.push(createStar());
+
+function drawStars(time) {
+  starsCtx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+  stars.forEach(s => {
+    const alpha = s.opacity * (0.6 + 0.4 * Math.sin(time * s.twinkleSpeed + s.twinkleOffset));
+    starsCtx.beginPath();
+    starsCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    starsCtx.fillStyle = `rgba(255,255,240,${alpha})`;
+    starsCtx.fill();
+  });
+  if (Math.random() < 0.006) shootingStars.push(createShootingStar());
+  shootingStars = shootingStars.filter(s => {
+    const grad = starsCtx.createLinearGradient(s.x, s.y, s.x - s.vx * s.len * 0.02, s.y - s.vy * s.len * 0.02);
+    grad.addColorStop(0, `rgba(255,240,200,${s.life})`);
+    grad.addColorStop(1, 'rgba(255,240,200,0)');
+    starsCtx.beginPath();
+    starsCtx.moveTo(s.x, s.y);
+    starsCtx.lineTo(s.x - s.vx * s.len * 0.02, s.y - s.vy * s.len * 0.02);
+    starsCtx.strokeStyle = grad;
+    starsCtx.lineWidth = 1.5;
+    starsCtx.stroke();
+    s.x += s.vx; s.y += s.vy; s.life -= s.decay;
+    return s.life > 0;
+  });
+}
+function animateStars(time) { drawStars(time); requestAnimationFrame(animateStars); }
+requestAnimationFrame(animateStars);
+
+/* ========================================
+   CSS CONFETTI
+   ======================================== */
+const confettiShapes = ['●','■','▲','♦','★','●'];
+const confettiColors = ['#ffd700','#ff6b9d','#7b68ee','#ff9500','#00e5ff','#76ff03','#ff4081','#ffab40'];
+const confettiLayer = document.getElementById('confettiLayer');
+
+function spawnConfettiPiece() {
+  const piece = document.createElement('div');
+  piece.className = 'confetti-piece';
+  piece.textContent = confettiShapes[Math.floor(Math.random() * confettiShapes.length)];
+  piece.style.left = Math.random() * 100 + '%';
+  piece.style.fontSize = (Math.random() * 14 + 8) + 'px';
+  piece.style.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+  piece.style.animationDuration = (Math.random() * 4 + 5) + 's';
+  piece.style.animationDelay = '0s';
+  confettiLayer.appendChild(piece);
+  setTimeout(() => piece.remove(), 9000);
+}
+
+// Spawn confetti periodically (slower rate to not overwhelm)
+let confettiInterval = null;
+function startConfetti() {
+  if (confettiInterval) return;
+  for (let i = 0; i < 15; i++) setTimeout(spawnConfettiPiece, i * 200);
+  confettiInterval = setInterval(() => {
+    if (Math.random() < 0.5) spawnConfettiPiece();
+  }, 600);
+}
+function stopConfetti() {
+  clearInterval(confettiInterval);
+  confettiInterval = null;
+  confettiLayer.innerHTML = '';
+}
+function burstConfetti(count) {
+  for (let i = 0; i < count; i++) setTimeout(spawnConfettiPiece, i * 40);
+}
+
+startConfetti();
+
+/* ========================================
+   FLOATING BALLOONS
+   ======================================== */
+const balloonEmojis = ['🎈','🎈','🎈','🎈','🎈','🎀','🎁','🎊','💝','🌟'];
+const balloonsLayer = document.getElementById('balloonsLayer');
+
+function spawnBalloon() {
+  const b = document.createElement('div');
+  b.className = 'balloon';
+  b.textContent = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+  b.style.left = (Math.random() * 90 + 5) + '%';
+  b.style.animationDuration = (Math.random() * 6 + 8) + 's';
+  balloonsLayer.appendChild(b);
+  setTimeout(() => b.remove(), 14000);
+}
+
+let balloonInterval = null;
+function startBalloons() {
+  if (balloonInterval) return;
+  for (let i = 0; i < 3; i++) setTimeout(spawnBalloon, i * 1200);
+  balloonInterval = setInterval(spawnBalloon, 3000);
+}
+function stopBalloons() {
+  clearInterval(balloonInterval);
+  balloonInterval = null;
+  balloonsLayer.innerHTML = '';
+}
+
+startBalloons();
+
+/* ========================================
+   SPARKLE CURSOR TRAIL
+   ======================================== */
+const sparkleChars = '✦✧✶✷✵✨⭑'.split('');
+document.addEventListener('mousemove', (e) => {
+  if (Math.random() > 0.5) return;
+  const s = document.createElement('div');
+  s.className = 'sparkle';
+  s.textContent = sparkleChars[Math.floor(Math.random() * sparkleChars.length)];
+  s.style.left = e.clientX + 'px';
+  s.style.top = e.clientY + 'px';
+  s.style.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 700);
+});
+document.addEventListener('touchmove', (e) => {
+  if (Math.random() > 0.6) return;
+  const t = e.touches[0];
+  const s = document.createElement('div');
+  s.className = 'sparkle';
+  s.textContent = sparkleChars[Math.floor(Math.random() * sparkleChars.length)];
+  s.style.left = t.clientX + 'px';
+  s.style.top = t.clientY + 'px';
+  s.style.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 700);
+}, { passive: true });
+
+/* ========================================
+   STAGE 0: PASSWORD
+   ======================================== */
+const pwdInputs = [document.getElementById('pwd1'),document.getElementById('pwd2'),document.getElementById('pwd3'),document.getElementById('pwd4')];
+const pwdError = document.getElementById('pwdError');
+let pwdAttempts = 0;
+
+pwdInputs.forEach((inp, i) => {
+  inp.addEventListener('input', (e) => {
+    const val = e.target.value.replace(/[^0-9]/g, '');
+    e.target.value = val.slice(0, 1);
+    if (val && i < 3) pwdInputs[i+1].focus();
+    pwdError.textContent = '';
+  });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !inp.value && i > 0) pwdInputs[i-1].focus();
+    if (e.key === 'Enter') checkPassword();
+  });
+  inp.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 4);
+    paste.split('').forEach((ch, j) => { if (pwdInputs[j]) pwdInputs[j].value = ch; });
+    if (paste.length === 4) checkPassword();
+  });
+});
+
+function checkPassword() {
+  const pwd = pwdInputs.map(i => i.value).join('');
+  if (pwd === '0322') {
+    pwdAttempts = 0;
+    document.getElementById('stage-password').classList.add('hidden');
+    startCountdown();
+  } else {
+    pwdAttempts++;
+    if (pwdAttempts >= 3) {
+      pwdError.textContent = '就是你的生日呀！笨！';
+    } else {
+      pwdError.textContent = '❌ 密码不对哦，再想想那个特别的日子~';
+    }
+    pwdInputs.forEach(i => { i.value = ''; i.style.borderColor = '#ff6b6b'; });
+    setTimeout(() => pwdInputs.forEach(i => i.style.borderColor = 'rgba(240,192,96,0.35)'), 600);
+    pwdInputs[0].focus();
+  }
+}
+
+/* ========================================
+   STAGE 1: COUNTDOWN
+   ======================================== */
+function startCountdown() {
+  showStage('countdown');
+  const cd = document.getElementById('countdownNum');
+  const nums = ['3','2','1'];
+  let i = 0;
+  function tick() {
+    if (i >= nums.length) {
+      cd.textContent = '✨';
+      cd.style.animation = 'none'; cd.offsetHeight;
+      cd.style.animation = 'countPop 0.7s ease-out';
+      document.getElementById('stage-countdown').classList.add('hidden');
+      setTimeout(startFireworks, 500);
+      return;
+    }
+    cd.textContent = nums[i];
+    cd.style.animation = 'none'; cd.offsetHeight;
+    cd.style.animation = 'countPop 0.7s ease-out';
+    i++;
+    setTimeout(tick, 1200);
+  }
+  tick();
+}
+
+/* ========================================
+   STAGE 2: FIREWORKS
+   ======================================== */
+const fwCanvas = document.getElementById('fireworksCanvas');
+const fwCtx = fwCanvas.getContext('2d');
+
+function resizeFireworks() {
+  fwCanvas.width = window.innerWidth;
+  fwCanvas.height = window.innerHeight;
+}
+resizeFireworks();
+
+let fwParticles = [];
+let fwRockets = [];
+let fwAnimId = null;
+let fwActive = false;
+let fwStartTime = 0;
+let fwFadeTimeout = null;
+
+const fwHuePool = [48, 340, 260, 30, 190, 90, 350, 280, 20, 310];
+
+function createRocket() {
+  const hue = fwHuePool[Math.floor(Math.random() * fwHuePool.length)];
+  return {
+    x: Math.random() * fwCanvas.width * 0.6 + fwCanvas.width * 0.2,
+    y: fwCanvas.height,
+    vy: -(3.2 + Math.random() * 0.6),
+    vx: (Math.random() - 0.5) * 1.0,
+    targetY: Math.random() * fwCanvas.height * 0.2 + fwCanvas.height * 0.1,
+    hue: hue,
+    trail: []
+  };
+}
+
+function explodeRocket(r) {
+  const count = 22 + Math.floor(Math.random() * 18);
+  const hue = r.hue + (Math.random() - 0.5) * 20;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 3 + 0.8;
+    fwParticles.push({
+      x: r.x, y: r.y,
+      px: r.x, py: r.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      decay: Math.random() * 0.007 + 0.003,
+      hue: hue,
+      sat: 75 + Math.random() * 25,
+      light: 55 + Math.random() * 20,
+      size: Math.random() * 2 + 2.5
+    });
+  }
+}
+
+function fireworkLoop(time) {
+  if (!fwActive && fwParticles.length === 0 && fwRockets.length === 0) {
+    fwAnimId = null;
+    return;
+  }
+
+  fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+  // stop launching after 8s
+  if (fwActive && time - fwStartTime < 8000 && Math.random() < 0.07) {
+    fwRockets.push(createRocket());
+  }
+
+  fwRockets = fwRockets.filter(r => {
+    r.y += r.vy; r.x += r.vx;
+    r.trail.push({ x: r.x, y: r.y, life: 1 });
+    fwCtx.beginPath(); fwCtx.arc(r.x, r.y, 1.8, 0, Math.PI * 2);
+    fwCtx.fillStyle = `hsl(${r.hue}, 90%, 80%)`; fwCtx.fill();
+    r.trail = r.trail.filter(t => { t.life -= 0.03; return t.life > 0; });
+    r.trail.forEach(t => {
+      fwCtx.beginPath(); fwCtx.arc(t.x, t.y, 0.6, 0, Math.PI * 2);
+      fwCtx.fillStyle = `hsla(${r.hue}, 80%, 70%,${t.life * 0.35})`; fwCtx.fill();
+    });
+    if (r.y <= r.targetY) { explodeRocket(r); return false; }
+    return true;
+  });
+
+  fwParticles.forEach(p => {
+    // tail line
+    fwCtx.beginPath();
+    fwCtx.moveTo(p.px, p.py);
+    fwCtx.lineTo(p.x, p.y);
+    fwCtx.strokeStyle = `hsla(${p.hue},${p.sat}%,${p.light}%,${p.life * 0.35})`;
+    fwCtx.lineWidth = p.size * 0.7;
+    fwCtx.stroke();
+    // glow
+    if (p.life > 0.5) {
+      fwCtx.beginPath();
+      fwCtx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+      const g = fwCtx.createRadialGradient(p.x, p.y, p.size * 0.3, p.x, p.y, p.size * 3);
+      g.addColorStop(0, `hsla(${p.hue}, 100%, 65%,${p.life * 0.25})`);
+      g.addColorStop(1, `hsla(${p.hue}, 100%, 60%,0)`);
+      fwCtx.fillStyle = g; fwCtx.fill();
+    }
+  });
+
+  fwParticles = fwParticles.filter(p => {
+    p.px = p.x; p.py = p.y;
+    p.x += p.vx; p.y += p.vy; p.vy += 0.03;
+    p.life -= p.decay;
+    if (p.life > 0) {
+      fwCtx.beginPath();
+      fwCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      fwCtx.fillStyle = `hsla(${p.hue},${p.sat}%,${p.light}%,${p.life})`;
+      fwCtx.fill();
+    }
+    return p.life > 0.005;
+  });
+
+  fwAnimId = requestAnimationFrame(fireworkLoop);
+}
+
+function startFireworks() {
+  fwActive = true;
+  fwStartTime = performance.now();
+  fwRockets = [];
+  fwParticles = [];
+  fwCanvas.style.opacity = '1';
+  fwCanvas.style.display = '';
+  document.getElementById('nameReveal').classList.remove('active');
+  fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+  if (fwAnimId) cancelAnimationFrame(fwAnimId);
+  clearTimeout(fwFadeTimeout);
+  fwAnimId = requestAnimationFrame(fireworkLoop);
+
+  // after 8s, stop rockets; after 10s, show name + fade
+  setTimeout(() => { fwActive = false; }, 8000);
+
+  fwFadeTimeout = setTimeout(() => {
+    fwCanvas.style.opacity = '0';
+    const nr = document.getElementById('nameReveal');
+    nr.classList.add('active');
+    // after 7s, start fading + transition to notes
+    setTimeout(() => {
+      nr.classList.add('fading');
+      setTimeout(() => {
+        nr.classList.remove('active', 'fading');
+        fwCanvas.style.display = 'none';
+        goStage('notes');
+        setupStickyNotes();
+        burstConfetti(40);
+      }, 900);
+    }, 7000);
+  }, 10000);
+}
+
+/* ========================================
+   STAGE 3: STICKY NOTES HEART
+   ======================================== */
+// 50 contour + overflow pool — JS picks based on grid count
+const notesContour = [
+  '愿你的笑容\n比星光更璀璨',
+  '眉眼弯弯处\n尽是温柔',
+  '你是时光里\n最动人的诗行',
+  '在最好的年华\n遇见最好的自己',
+  '没事也可以\n给我发消息 😊',
+  '世界很大\n有幸相遇',
+  '愿你被这世界\n温柔以待',
+  '所有的美好\n都如期而至',
+  '做自己的太阳\n无需借谁的光',
+  '岁月不败\n美人',
+  '愿你历遍山河\n觉得人生值得',
+  '平安喜乐\n万事胜意',
+  '生活明朗\n万物可爱',
+  '心之所向\n素履以往',
+  '且将新火试新茶\n诗酒趁年华',
+  '愿你所愿\n皆能实现',
+  '最好的总在\n不经意间出现',
+  '山野万里的风\n都不及你',
+  '以梦为马\n不负韶华',
+  '繁花似锦\n未来可期',
+  '你值得\n世间一切美好',
+  '慢慢来会好的\n你又不差',
+  '坚定又清澈\n温柔且辽阔',
+  '不止生日\n天天快乐',
+  '愿你像风\n有软肋也有铠甲',
+  '像向日葵\n永远向阳而生',
+  '这世界乱糟糟\n而你干干净净',
+  '记得多去\n看看听听！',
+  '有事可以\n给我发消息',
+  '所有晦暗\n都留给过往',
+  '从黎明到黄昏\n阳光胜过一切',
+  '希望你继续\n永远好奇',
+  '祝你拥有\n随时休息\n的底气',
+  '保持热爱\n奔赴山海',
+  '玫瑰到了花期\n我很想你',
+  '日落尤其温柔\n人间皆是浪漫',
+  '爱自己是\n终身浪漫开始',
+  '你要抵达\n是山川湖海',
+  '前路浩浩荡荡\n万事可期',
+  '所行化坦途\n所求皆如愿',
+  '你可爱得\n无可替代',
+  '总有人间\n一两风\n填你十万八千梦',
+  '细水长流里\n慢慢变好',
+  '你站的地方\n就是风景',
+  '万物有裂痕\n那是光照进',
+  '愿你眼里有光\n心中有爱',
+  '一路小跑\n保持清醒\n永远温柔',
+  '你比夏天\n还温暖明亮',
+  '且听风吟\n静待花开',
+  '多喜乐\n长安宁'
+];
+const notesFill = [
+  '如意','喜乐','无忧','安暖','明媚','清澈','晴朗',
+  '柔软','自在','笃定','出发','热爱','盛开','和煦',
+  '甘甜','芬芳','舒展','轻盈','悠长','坚定','辽阔',
+  '浪漫','热烈','滚烫','明亮','鲜活','蓬勃','恰好',
+  '小满','知足','浅喜','深蓝','余晖','星河','微光',
+  '月白','初雪','花信','朝露','晚晴','乐观','灿漫',
+  '温柔','值得','珍贵','发光','顺遂','幸运','自由',
+  '平安','健康','开心','被爱','如愿','闪耀','有你'
+];
+
+const noteColors = [
+  '#fff9c4','#ffecb3','#ffe0b2','#ffccbc','#f8bbd0',
+  '#e1bee7','#d1c4e9','#c5cae9','#bbdefb','#b3e5fc',
+  '#b2dfdb','#c8e6c9','#dcedc8','#f0f4c3','#fff9c4',
+  '#ffcc80','#ffab91','#ef9a9a','#f48fb1','#ce93d8',
+  '#b39ddb','#90caf9','#81d4fa','#80cbc4','#a5d6a7',
+  '#ffe082','#ffcc80','#ef9a9a','#ce93d8','#80deea',
+  '#a5d6a7','#c5e1a5','#fff59d','#ffab91','#bcaaa4',
+  '#f8bbd0','#b3e5fc','#d1c4e9','#ffccbc','#c8e6c9',
+  '#ffe57f','#ffd54f','#f48fb1','#b39ddb','#80cbc4',
+  '#fff176','#ffcc80','#e6ee9c','#ef9a9a','#90caf9'
+];
+
+function setupStickyNotes() {
+  const container = document.getElementById('notesHeart');
+  container.querySelectorAll('.sticky-note').forEach(n => n.remove());
+
+  const size = container.offsetWidth;
+  // ~13 cols on desktop, ~9 on mobile
+  const cols = Math.round(size / (size > 500 ? 50 : 38));
+  const cellSize = size / cols;
+  const nsize = (cellSize - 1) + 'px';
+  const nfont = (cellSize * 0.22) + 'px';
+
+  const cx = size / 2;
+  const cy = size / 2 + size * 0.04;
+  const hscale = cols / 32;
+
+  // 1. render heart to offscreen canvas
+  const off = document.createElement('canvas');
+  off.width = cols; off.height = cols;
+  const offCtx = off.getContext('2d');
+  const gx = cols / 2;
+  const gy = cols / 2 + cols * 0.04;
+  offCtx.fillStyle = '#fff';
+  offCtx.beginPath();
+  for (let t = 0; t <= Math.PI * 2; t += 0.015) {
+    const px = gx + 16 * Math.pow(Math.sin(t), 3) * hscale;
+    const py = gy - (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) * hscale;
+    t === 0 ? offCtx.moveTo(px, py) : offCtx.lineTo(px, py);
+  }
+  offCtx.closePath();
+  offCtx.fill();
+  const img = offCtx.getImageData(0, 0, cols, cols);
+
+  // 2. collect cells inside heart
+  const cells = [];
+  for (let r = 0; r < cols; r++) {
+    for (let c = 0; c < cols; c++) {
+      const idx = (r * cols + c) * 4;
+      if (img.data[idx + 3] > 100) {
+        const px = (c + 0.5) * cellSize;
+        const py = (r + 0.5) * cellSize;
+        const dx = px - cx;
+        const dy = py - cy;
+        cells.push({
+          x: px, y: py,
+          dist: Math.sqrt(dx * dx + dy * dy),
+          angle: Math.atan2(dx, -dy)
+        });
+      }
+    }
+  }
+
+  // 3. spiral sort: inner → outer, clockwise within same band
+  const bandWidth = cellSize * 1.2;
+  cells.sort((a, b) => {
+    const da = Math.floor(a.dist / bandWidth);
+    const db = Math.floor(b.dist / bandWidth);
+    if (da !== db) return da - db;
+    return a.angle - b.angle;
+  });
+
+  // 4. create DOM
+  const docFrag = document.createDocumentFragment();
+  cells.forEach((cell, idx) => {
+    const note = document.createElement('div');
+    note.className = 'sticky-note';
+    if (idx >= 15) note.classList.add('no-pin');
+    note.style.setProperty('--nsize', nsize);
+    note.style.setProperty('--nfont', nfont);
+    note.style.setProperty('--rot', ((Math.random() - 0.5) * 18) + 'deg');
+    note.style.left = cell.x + 'px';
+    note.style.top = cell.y + 'px';
+    note.style.background = noteColors[idx % noteColors.length];
+    // pick text: first 40 use contour, rest use fill pool
+    const pool = idx < 40 ? notesContour : notesFill;
+    note.textContent = pool[idx % pool.length];
+    docFrag.appendChild(note);
+  });
+
+  container.appendChild(docFrag);
+
+  // staggered pop-in via JS — avoids 100+ simultaneous CSS animation-delay tracks
+  const allNoteEls = container.querySelectorAll('.sticky-note');
+  const interval = 80; // ms per note
+  allNoteEls.forEach((el, i) => {
+    setTimeout(() => el.classList.add('pop-in'), i * interval + 30);
+  });
+
+  // switch to floating after all popped
+  const totalDelay = allNoteEls.length * interval + 800;
+  setTimeout(() => {
+    allNoteEls.forEach(el => {
+      el.style.setProperty('--fdelay', (Math.random() * 1.5) + 's');
+      el.classList.add('floating');
+    });
+  }, totalDelay);
+}
+
+/* ========================================
+   STAGE 4: TOP-DOWN CAKE + 22 CANDLES
+   ======================================== */
+function setupCake() {
+  const cake = document.getElementById('cakeTopdown');
+
+  cake.querySelectorAll('.candle-item,.sprinkle').forEach(el => el.remove());
+
+  const totalCandles = 22;
+  const cx = 170;
+  const cy = 170;
+  const rings = [
+    { r: 170 * 0.37, count: 10 },
+    { r: 170 * 0.27, count: 8 },
+    { r: 170 * 0.16, count: 4 }
+  ];
+
+  let placed = 0;
+  rings.forEach((ring, ri) => {
+    const offsetAngle = ri * 0.35;
+    for (let i = 0; i < ring.count; i++) {
+      const angle = (i / ring.count) * Math.PI * 2 + offsetAngle;
+      const left = cx + Math.cos(angle) * ring.r;
+      const top = cy + Math.sin(angle) * ring.r;
+
+      const item = document.createElement('div');
+      item.className = 'candle-item';
+      item.style.left = left + 'px';
+      item.style.top = top + 'px';
+      item.style.transform = `translate(-50%, -50%) rotate(${(Math.random()-0.5)*6}deg)`;
+
+      const flame = document.createElement('div');
+      flame.className = 'flame';
+      item.appendChild(flame);
+
+      cake.appendChild(item);
+      placed++;
+    }
+  });
+
+  // add colorful sprinkles
+  const sprinkleColors = ['#ffd700','#ff6b9d','#7b68ee','#00e5ff','#76ff03','#ff9500','#ff4081'];
+  for (let i = 0; i < 28; i++) {
+    const s = document.createElement('div');
+    s.className = 'sprinkle';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * 160;
+    s.style.left = (cx + Math.cos(angle) * dist) + 'px';
+    s.style.top = (cy + Math.sin(angle) * dist * 0.9) + 'px';
+    s.style.width = (Math.random() * 5 + 3) + 'px';
+    s.style.height = (Math.random() * 1.5 + 1) + 'px';
+    s.style.background = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
+    s.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`;
+    s.style.opacity = (Math.random() * 0.5 + 0.5);
+    cake.appendChild(s);
+  }
+
+  document.getElementById('cakeHint').style.display = 'block';
+  document.getElementById('cakeHint').textContent = '🕯️ 点一下蛋糕，吹灭所有蜡烛，许个愿吧~';
+
+  // click cake → blow all
+  let alreadyBlown = false;
+  cake.addEventListener('click', function blowAll() {
+    if (alreadyBlown) return;
+    const flames = cake.querySelectorAll('.flame');
+    flames.forEach(f => {
+      if (!f.classList.contains('out')) {
+        f.classList.add('out');
+        f.parentElement.classList.add('out');
+      }
+    });
+    if (Array.from(flames).filter(f => !f.classList.contains('out')).length === 0) {
+      alreadyBlown = true;
+      document.getElementById('cakeHint').textContent = '✨ 愿望一定会实现！';
+      showCelebrateBurst();
+      burstConfetti(60);
+      setTimeout(() => {
+        document.getElementById('stage-cake').classList.add('hidden');
+        goStage('card');
+        setupBlessingCard();
+        document.getElementById('card3d').classList.remove('flipped');
+      }, 1500);
+    }
+  });
+  cake.addEventListener('touchend', function blowAllTouch(e) {
+    e.preventDefault();
+    if (alreadyBlown) return;
+    const flames = cake.querySelectorAll('.flame');
+    flames.forEach(f => {
+      if (!f.classList.contains('out')) {
+        f.classList.add('out');
+        f.parentElement.classList.add('out');
+      }
+    });
+    if (Array.from(flames).filter(f => !f.classList.contains('out')).length === 0) {
+      alreadyBlown = true;
+      document.getElementById('cakeHint').textContent = '✨ 愿望一定会实现！';
+      showCelebrateBurst();
+      burstConfetti(60);
+      setTimeout(() => {
+        document.getElementById('stage-cake').classList.add('hidden');
+        goStage('card');
+        setupBlessingCard();
+        document.getElementById('card3d').classList.remove('flipped');
+      }, 1500);
+    }
+  });
+}
+
+function showCelebrateBurst() {
+  const burst = document.getElementById('celebrateBurst');
+  burst.classList.remove('active');
+  void burst.offsetWidth;
+  burst.classList.add('active');
+  setTimeout(() => burst.classList.remove('active'), 2000);
+}
+
+/* ========================================
+   STAGE 5: BLESSING CARD
+   ======================================== */
+function setupBlessingCard() {
+  const msg = [
+    '今天这个特别的日子，',
+    '我想用满天星光为你加冕。',
+    '',
+    '愿你像春风一样自由，',
+    '像夏花一样绚烂，',
+    '像秋月一样澄澈，',
+    '像冬雪一样纯粹。',
+    '',
+    '山野万里的风，都不及你；',
+    '星河滚烫的人间，你最珍贵。',
+    '',
+    '光阴把温柔写在你眉间，',
+    '岁月把勇气放进你掌心。',
+    '',
+    '愿你的眼睛里永远有星辰，',
+    '愿你的脚步永远有方向。',
+    '',
+    '烟火向星辰，所愿皆成真。',
+    '不止生日，天天都要快乐。'
+  ].join('<br>');
+  document.getElementById('blessingMsg').innerHTML = msg;
+  document.getElementById('audioBtn').classList.remove('hidden');
+}
+
+let cardAutoDone = false;
+
+function flipCard() {
+  const card = document.getElementById('card3d');
+  const isFlipping = !card.classList.contains('flipped');
+  card.classList.toggle('flipped');
+  burstConfetti(25);
+
+  if (isFlipping) {
+    const back = card.querySelector('.card-back');
+    back.scrollTop = 0;
+    setTimeout(() => {
+      if (!cardAutoDone) autoScrollCredits(back);
+    }, 1300);
+  }
+}
+
+function autoScrollCredits(el) {
+  const totalHeight = el.scrollHeight - el.clientHeight;
+  if (totalHeight <= 0) { cardAutoDone = true; return; }
+  const duration = 15000;
+  const start = performance.now();
+  let running = true;
+
+  function stop() {
+    running = false;
+    cardAutoDone = true;
+  }
+  el.addEventListener('wheel', stop, { once: true });
+  el.addEventListener('touchstart', stop, { once: true });
+
+  function step(now) {
+    if (!running) return;
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    el.scrollTop = progress * totalHeight;
+    if (progress >= 1) { cardAutoDone = true; return; }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ========================================
+   AUDIO
+   ======================================== */
+function toggleAudio() {
+  const bgm = document.getElementById('bgm');
+  const btn = document.getElementById('audioBtn');
+  if (bgm.paused) {
+    bgm.play().then(() => {
+      btn.classList.add('playing');
+      btn.textContent = '🎶';
+    }).catch(() => { btn.textContent = '🔇'; });
+  } else {
+    bgm.pause();
+    btn.classList.remove('playing');
+    btn.textContent = '🎵';
+  }
+}
+
+function initAudio() {
+  document.getElementById('bgm').play().then(() => {
+    document.getElementById('audioBtn').classList.add('playing');
+    document.getElementById('audioBtn').textContent = '🎶';
+  }).catch(() => {});
+}
+document.addEventListener('click', initAudio, { once: true });
+
+/* ========================================
+   RESTART
+   ======================================== */
+function restartAll() {
+  document.getElementById('card3d').classList.remove('flipped');
+  document.getElementById('stage-card').classList.add('hidden');
+  document.getElementById('audioBtn').classList.add('hidden');
+  document.getElementById('bgm').pause();
+  document.getElementById('audioBtn').classList.remove('playing');
+  document.getElementById('audioBtn').textContent = '🎵';
+  document.getElementById('nameReveal').classList.remove('active', 'fading');
+  fwCanvas.style.display = '';
+  fwCanvas.style.opacity = '1';
+  cardAutoDone = false;
+  pwdAttempts = 0;
+  pwdInputs.forEach(i => i.value = '');
+  pwdError.textContent = '';
+  document.addEventListener('click', initAudio, { once: true });
+  showStage('password');
+  pwdInputs[0].focus();
+}
+
+/* ========================================
+   INIT
+   ======================================== */
+showStage('password');
+pwdInputs[0].focus();
+</script>
+</body>
+</html>
