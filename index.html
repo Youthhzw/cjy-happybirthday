@@ -1229,22 +1229,22 @@ function setupStickyNotes() {
   container.querySelectorAll('.sticky-note').forEach(n => n.remove());
 
   const size = container.offsetWidth;
-  // ~13 cols on desktop, ~9 on mobile
-  const cols = Math.round(size / (size > 500 ? 50 : 38));
-  const cellSize = size / cols;
+  // fixed reference grid → same heart cells on all devices, scaled to fit
+  const refCols = 16;
+  const cellSize = size / refCols;
   const nsize = (cellSize - 1) + 'px';
   const nfont = (cellSize * 0.22) + 'px';
 
   const cx = size / 2;
   const cy = size / 2 + size * 0.04;
-  const hscale = cols / 32;
+  const hscale = refCols / 32;
 
   // 1. render heart to offscreen canvas
   const off = document.createElement('canvas');
-  off.width = cols; off.height = cols;
+  off.width = refCols; off.height = refCols;
   const offCtx = off.getContext('2d');
-  const gx = cols / 2;
-  const gy = cols / 2 + cols * 0.04;
+  const gx = refCols / 2;
+  const gy = refCols / 2 + refCols * 0.04;
   offCtx.fillStyle = '#fff';
   offCtx.beginPath();
   for (let t = 0; t <= Math.PI * 2; t += 0.015) {
@@ -1254,13 +1254,13 @@ function setupStickyNotes() {
   }
   offCtx.closePath();
   offCtx.fill();
-  const img = offCtx.getImageData(0, 0, cols, cols);
+  const img = offCtx.getImageData(0, 0, refCols, refCols);
 
   // 2. collect cells inside heart
   const cells = [];
-  for (let r = 0; r < cols; r++) {
-    for (let c = 0; c < cols; c++) {
-      const idx = (r * cols + c) * 4;
+  for (let r = 0; r < refCols; r++) {
+    for (let c = 0; c < refCols; c++) {
+      const idx = (r * refCols + c) * 4;
       if (img.data[idx + 3] > 100) {
         const px = (c + 0.5) * cellSize;
         const py = (r + 0.5) * cellSize;
@@ -1296,8 +1296,8 @@ function setupStickyNotes() {
     note.style.left = cell.x + 'px';
     note.style.top = cell.y + 'px';
     note.style.background = noteColors[idx % noteColors.length];
-    // pick text: first 40 use contour, rest use fill pool
-    const pool = idx < 40 ? notesContour : notesFill;
+    // pick text: first 50 use contour, rest use fill pool
+    const pool = idx < 50 ? notesContour : notesFill;
     note.textContent = pool[idx % pool.length];
     docFrag.appendChild(note);
   });
