@@ -802,7 +802,7 @@ function showStage(name) {
 
 function goStage(name) {
   showStage(name);
-  if (name === 'cake') setupCake();
+  if (name === 'cake') requestAnimationFrame(() => setupCake());
   if (name === 'card') { document.getElementById('card3d').classList.remove('flipped'); }
 }
 
