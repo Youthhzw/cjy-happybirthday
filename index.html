@@ -1663,7 +1663,6 @@ function startBgm() {
   btnAudio.classList.add('playing');
   btnAudio.textContent = '🎶';
 }
-document.addEventListener('click', initAudio, { once: true });
 
 function toggleAudio() {
   if (!started) { startBgm(); return; }
@@ -1711,22 +1710,23 @@ function restartAll() {
   const bar = document.getElementById('loaderBar');
   const pct = document.getElementById('loaderPct');
   let bgmPercent = 0;
+  let displayedPct = 0;
+  let animFrame = null;
 
-  function update() {
-    const val = Math.min(10 + Math.round(bgmPercent * 0.9), 99);
-    bar.style.width = val + '%';
-    pct.textContent = val + '%';
+  function smoothTick() {
+    if (displayedPct >= 100) { animFrame = null; return; }
+    // chase real percentage with a smoothing factor
+    const target = Math.min(10 + Math.round(bgmPercent * 0.9), 100);
+    displayedPct += Math.max(1, (target - displayedPct) * 0.12);
+    if (displayedPct > 99 && target >= 100) displayedPct = 100;
+    displayedPct = Math.min(displayedPct, target);
+    bar.style.width = displayedPct + '%';
+    pct.textContent = Math.round(displayedPct) + '%';
+    animFrame = requestAnimationFrame(smoothTick);
   }
+  smoothTick();
 
-  // track actual page resources (CSS, JS, images etc.)
-  if (window.PerformanceObserver) {
-    try {
-      const po = new PerformanceObserver(() => update());
-      po.observe({ type: 'resource', buffered: true });
-    } catch(e) {}
-  }
-
-  // fetch bgm with progress — this is the bulk of the loading
+  // fetch bgm with progress
   fetch('bgm.mp3').then(response => {
     const total = +response.headers.get('Content-Length');
     const reader = response.body.getReader();
@@ -1738,43 +1738,52 @@ function restartAll() {
         chunks.push(value);
         received += value.length;
         bgmPercent = total ? Math.round(received / total * 100) : Math.min(bgmPercent + 3, 99);
-        update();
         return pump();
       });
     }
     return pump();
   }).then(buf => {
     bgmPercent = 98;
-    update();
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtx = ctx;
     return ctx.decodeAudioData(buf);
   }).then(decoded => {
     audioBuffer = decoded;
     bgmPercent = 100;
-    update();
-    bar.style.width = '100%';
-    pct.textContent = '100%';
-    // fade out loader, show password
-    setTimeout(() => {
-      loader.classList.add('done');
-      showStage('password');
-      pwdInputs[0].focus();
-    }, 500);
   }).catch(() => {
-    loader.classList.add('done');
-    showStage('password');
-    pwdInputs[0].focus();
+    bgmPercent = 100;
   });
 
-  // fallback: if bgm takes forever, show password after 12s anyway
+  // poll for completion, then fade out
+  const readyPoll = setInterval(() => {
+    if (bgmPercent >= 100 && displayedPct >= 99) {
+      clearInterval(readyPoll);
+      displayedPct = 100;
+      bar.style.width = '100%';
+      pct.textContent = '100%';
+      cancelAnimationFrame(animFrame);
+      setTimeout(() => {
+        loader.classList.add('done');
+        showStage('password');
+        pwdInputs[0].focus();
+        // register audio click listener only AFTER loader is gone
+        document.addEventListener('click', initAudio, { once: true });
+      }, 500);
+    }
+  }, 150);
+
+  // fallback: force complete after 12s
   setTimeout(() => {
     if (!loader.classList.contains('done')) {
+      clearInterval(readyPoll);
+      cancelAnimationFrame(animFrame);
+      displayedPct = 100;
       bar.style.width = '100%';
       pct.textContent = '100%';
       loader.classList.add('done');
       showStage('password');
       pwdInputs[0].focus();
+      document.addEventListener('click', initAudio, { once: true });
     }
   }, 12000);
 })();
