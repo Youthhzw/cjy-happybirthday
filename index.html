@@ -1710,15 +1710,10 @@ function restartAll() {
   const loader = document.getElementById('pageLoader');
   const bar = document.getElementById('loaderBar');
   const pct = document.getElementById('loaderPct');
-  const totalAssets = 1; // bgm.mp3 is the heavy one
-  let assetsLoaded = 0;
   let bgmPercent = 0;
 
   function update() {
-    // weighted: web assets 10%, bgm 90%
-    const webWeight = 0.1; const bgmWeight = 0.9;
-    const p = Math.round(webWeight * 100 + bgmWeight * bgmPercent);
-    const val = Math.min(p, 99);
+    const val = Math.min(10 + Math.round(bgmPercent * 0.9), 99);
     bar.style.width = val + '%';
     pct.textContent = val + '%';
   }
@@ -1726,10 +1721,7 @@ function restartAll() {
   // track actual page resources (CSS, JS, images etc.)
   if (window.PerformanceObserver) {
     try {
-      const po = new PerformanceObserver((list) => {
-        assetsLoaded += list.getEntries().length;
-        update();
-      });
+      const po = new PerformanceObserver(() => update());
       po.observe({ type: 'resource', buffered: true });
     } catch(e) {}
   }
