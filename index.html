@@ -1330,15 +1330,15 @@ function setupCake() {
   cake.querySelectorAll('.candle-item,.sprinkle').forEach(el => el.remove());
 
   const totalCandles = 22;
-  const cx = 170;
-  const cy = 170;
+  const w = cake.offsetWidth;
+  const cx = w / 2;
+  const cy = w / 2;
   const rings = [
-    { r: 170 * 0.37, count: 10 },
-    { r: 170 * 0.27, count: 8 },
-    { r: 170 * 0.16, count: 4 }
+    { r: w * 0.185, count: 10 },
+    { r: w * 0.135, count: 8 },
+    { r: w * 0.08, count: 4 }
   ];
 
-  let placed = 0;
   rings.forEach((ring, ri) => {
     const offsetAngle = ri * 0.35;
     for (let i = 0; i < ring.count; i++) {
@@ -1357,7 +1357,6 @@ function setupCake() {
       item.appendChild(flame);
 
       cake.appendChild(item);
-      placed++;
     }
   });
 
@@ -1367,7 +1366,7 @@ function setupCake() {
     const s = document.createElement('div');
     s.className = 'sprinkle';
     const angle = Math.random() * Math.PI * 2;
-    const dist = Math.random() * 160;
+    const dist = Math.random() * w * 0.47;
     s.style.left = (cx + Math.cos(angle) * dist) + 'px';
     s.style.top = (cy + Math.sin(angle) * dist * 0.9) + 'px';
     s.style.width = (Math.random() * 5 + 3) + 'px';
