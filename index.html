@@ -1645,36 +1645,58 @@ let audioCtx = null;
 let audioBuffer = null;
 let sourceNode = null;
 let gainNode = null;
-let started = false;
+let audioState = 'idle'; // idle | starting | playing | paused
 
-function initAudio() { startBgm(); }
-function startBgm() {
-  if (!audioCtx || !audioBuffer || started) return;
-  started = true;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  sourceNode = audioCtx.createBufferSource();
-  sourceNode.buffer = audioBuffer;
-  sourceNode.loop = true;
-  gainNode = audioCtx.createGain();
-  gainNode.gain.value = 1;
-  sourceNode.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  sourceNode.start(0);
-  btnAudio.classList.add('playing');
-  btnAudio.textContent = '🎶';
+function initAudio() {
+  if (audioState === 'playing') return;
+  startBgm();
+}
+async function startBgm() {
+  if (!audioCtx || !audioBuffer) return;
+  if (audioState === 'starting' || audioState === 'playing') return;
+  audioState = 'starting';
+
+  try {
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
+    if (sourceNode) {
+      try { sourceNode.stop(); } catch(e) {}
+      sourceNode = null;
+    }
+    sourceNode = audioCtx.createBufferSource();
+    sourceNode.buffer = audioBuffer;
+    sourceNode.loop = true;
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 1;
+    sourceNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    sourceNode.start(0);
+    audioState = 'playing';
+    btnAudio.classList.add('playing');
+    btnAudio.textContent = '🎶';
+  } catch(e) {
+    audioState = 'idle';
+  }
 }
 
 function toggleAudio() {
-  if (!started) { startBgm(); return; }
+  if (audioState === 'idle') {
+    startBgm();
+    return;
+  }
+  if (audioState === 'starting') return;
   if (!gainNode) return;
   if (gainNode.gain.value > 0.5) {
     gainNode.gain.value = 0;
+    audioState = 'paused';
     btnAudio.classList.remove('playing');
-    btnAudio.textContent = '\uD83C\uDFB5';
+    btnAudio.textContent = '🎵';
   } else {
     gainNode.gain.value = 1;
+    audioState = 'playing';
     btnAudio.classList.add('playing');
-    btnAudio.textContent = '\uD83C\uDFB6';
+    btnAudio.textContent = '🎶';
   }
 }
 
@@ -1686,7 +1708,7 @@ function restartAll() {
   document.getElementById('stage-card').classList.add('hidden');
   document.getElementById('audioBtn').classList.add('hidden');
   if (sourceNode) { try { sourceNode.stop(); } catch(e) {} sourceNode = null; }
-  started = false;
+  audioState = 'idle';
   gainNode = null;
   document.getElementById('audioBtn').classList.remove('playing');
   document.getElementById('audioBtn').textContent = '🎵';
@@ -1709,24 +1731,31 @@ function restartAll() {
   const loader = document.getElementById('pageLoader');
   const bar = document.getElementById('loaderBar');
   const pct = document.getElementById('loaderPct');
-  let bgmPercent = 0;
-  let displayedPct = 0;
-  let animFrame = null;
+  let realProgress = 0;       // bgm fetch actual (0-100)
+  let displayedProgress = 0;  // what the bar shows
+  const minDuration = 2500;   // bar animation takes at least this long
+  const maxDuration = 12000;  // absolute deadline
+  const startTime = performance.now();
 
-  function smoothTick() {
-    if (displayedPct >= 100) { animFrame = null; return; }
-    // chase real percentage with a smoothing factor
-    const target = Math.min(10 + Math.round(bgmPercent * 0.9), 100);
-    displayedPct += Math.max(1, (target - displayedPct) * 0.12);
-    if (displayedPct > 99 && target >= 100) displayedPct = 100;
-    displayedPct = Math.min(displayedPct, target);
-    bar.style.width = displayedPct + '%';
-    pct.textContent = Math.round(displayedPct) + '%';
-    animFrame = requestAnimationFrame(smoothTick);
+  function animFrame(now) {
+    const elapsed = now - startTime;
+    // cap: displayed cannot exceed what minDuration allows
+    const maxAllowed = Math.min(elapsed / minDuration, 1) * 100;
+    const target = Math.min(realProgress, maxAllowed);
+    const step = Math.max(0.5, (target - displayedProgress) * 0.15);
+    displayedProgress += step;
+    if (displayedProgress > 99.8 && realProgress >= 100 && elapsed >= minDuration) {
+      displayedProgress = 100;
+    }
+    bar.style.width = displayedProgress + '%';
+    pct.textContent = Math.round(displayedProgress) + '%';
+    if (displayedProgress < 100 && elapsed < maxDuration) {
+      requestAnimationFrame(animFrame);
+    }
   }
-  smoothTick();
+  requestAnimationFrame(animFrame);
 
-  // fetch bgm with progress
+  // fetch bgm with progress — only drives realProgress
   fetch('bgm.mp3').then(response => {
     const total = +response.headers.get('Content-Length');
     const reader = response.body.getReader();
@@ -1737,55 +1766,39 @@ function restartAll() {
         if (done) { return new Blob(chunks).arrayBuffer(); }
         chunks.push(value);
         received += value.length;
-        bgmPercent = total ? Math.round(received / total * 100) : Math.min(bgmPercent + 3, 99);
+        realProgress = total ? Math.round(received / total * 100) : Math.min(realProgress + 3, 99);
         return pump();
       });
     }
     return pump();
   }).then(buf => {
-    bgmPercent = 98;
+    realProgress = 98;
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtx = ctx;
     return ctx.decodeAudioData(buf);
   }).then(decoded => {
     audioBuffer = decoded;
-    bgmPercent = 100;
+    realProgress = 100;
   }).catch(() => {
-    bgmPercent = 100;
+    realProgress = 100;
   });
 
-  // poll for completion, then fade out
+  // completion poll — wait until bar visually full, then fade out
   const readyPoll = setInterval(() => {
-    if (bgmPercent >= 100 && displayedPct >= 99) {
+    if (displayedProgress >= 100) {
       clearInterval(readyPoll);
-      displayedPct = 100;
-      bar.style.width = '100%';
-      pct.textContent = '100%';
-      cancelAnimationFrame(animFrame);
       setTimeout(() => {
         loader.classList.add('done');
-        showStage('password');
-        pwdInputs[0].focus();
         // register audio click listener only AFTER loader is gone
         document.addEventListener('click', initAudio, { once: true });
-      }, 500);
+      }, 400);
     }
-  }, 150);
+  }, 200);
 
-  // fallback: force complete after 12s
+  // deadline: force realProgress=100 so bar can finish within maxDuration
   setTimeout(() => {
-    if (!loader.classList.contains('done')) {
-      clearInterval(readyPoll);
-      cancelAnimationFrame(animFrame);
-      displayedPct = 100;
-      bar.style.width = '100%';
-      pct.textContent = '100%';
-      loader.classList.add('done');
-      showStage('password');
-      pwdInputs[0].focus();
-      document.addEventListener('click', initAudio, { once: true });
-    }
-  }, 12000);
+    if (displayedProgress < 100) { realProgress = 100; }
+  }, maxDuration - 500);
 })();
 
 /* ========================================
