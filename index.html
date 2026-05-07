@@ -1514,31 +1514,16 @@ function autoScrollCredits(el) {
 const bgmEl = document.getElementById('bgm');
 const btnAudio = document.getElementById('audioBtn');
 let bgmReady = false;
-let bgmFetching = false;
 
-// pre-buffer the whole MP3 into memory so WeChat won't stutter
-function ensureBgm() {
-  if (bgmReady || bgmFetching) return;
-  bgmFetching = true;
-  fetch('bgm.mp3')
-    .then(r => r.blob())
-    .then(blob => {
-      bgmEl.src = URL.createObjectURL(blob);
-      bgmReady = true;
-    })
-    .catch(() => {
-      // fallback: direct URL (may stutter on WeChat)
-      bgmEl.src = 'bgm.mp3';
-      bgmReady = true;
-    });
-}
+bgmEl.src = 'bgm.mp3';
+bgmEl.load();
+
+bgmEl.addEventListener('canplaythrough', () => { bgmReady = true; }, { once: true });
+// fallback: mark ready after 5s regardless
+setTimeout(() => { if (!bgmReady) bgmReady = true; }, 5000);
 
 function initAudio() {
-  ensureBgm();
-  attemptPlay();
-}
-function attemptPlay() {
-  if (!bgmReady) { setTimeout(attemptPlay, 200); return; }
+  if (!bgmReady) { setTimeout(initAudio, 300); return; }
   bgmEl.play().then(() => {
     btnAudio.classList.add('playing');
     btnAudio.textContent = '🎶';
@@ -1547,7 +1532,6 @@ function attemptPlay() {
 document.addEventListener('click', initAudio, { once: true });
 
 function toggleAudio() {
-  ensureBgm();
   if (!bgmReady) return;
   if (bgmEl.paused) {
     bgmEl.play().then(() => {
