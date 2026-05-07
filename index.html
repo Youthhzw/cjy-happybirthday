@@ -187,28 +187,38 @@ html, body {
 #stage-countdown { z-index: 90; }
 
 /* ========================================
-   STAGE 0.5: LOADING BAR
+   PAGE LOADER
    ======================================== */
-#stage-loading { z-index: 95; }
-.loading-box {
+#pageLoader {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 9999;
+  background: radial-gradient(ellipse at center, rgba(26,10,62,0.95) 0%, rgba(13,2,33,0.98) 100%);
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#pageLoader.done {
+  opacity: 0; visibility: hidden; pointer-events: none;
+}
+.loader-box {
   text-align: center;
   max-width: 380px; width: 85%;
 }
-.loading-text {
+.loader-text {
   color: var(--gold);
   font-size: clamp(1.2rem, 3.5vw, 1.6rem);
   letter-spacing: 0.1em;
   margin-bottom: 1.3rem;
   animation: titleGlow 2.5s ease-in-out infinite;
 }
-.loading-bar-wrap {
+.loader-bar-wrap {
   width: 100%; height: clamp(8px, 1.5vw, 12px);
   background: rgba(255,255,255,0.08);
   border-radius: 50px;
   overflow: hidden;
   border: 1px solid rgba(240,192,96,0.2);
 }
-.loading-bar {
+.loader-bar {
   height: 100%; width: 0%;
   border-radius: 50px;
   background: linear-gradient(90deg, #f0c060, #ffe9a0, #f0c060);
@@ -220,7 +230,7 @@ html, body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-.loading-pct {
+.loader-pct {
   color: rgba(255,255,255,0.5);
   font-size: 0.85rem;
   margin-top: 0.6rem;
@@ -732,6 +742,17 @@ html, body {
 </head>
 <body>
 
+<!-- ===== PAGE LOADER ===== -->
+<div id="pageLoader">
+  <div class="loader-box">
+    <p class="loader-text">🎁 准备惊喜中...</p>
+    <div class="loader-bar-wrap">
+      <div class="loader-bar" id="loaderBar"></div>
+    </div>
+    <p class="loader-pct" id="loaderPct">0%</p>
+  </div>
+</div>
+
 <canvas id="starsCanvas"></canvas>
 <canvas id="fireworksCanvas"></canvas>
 
@@ -765,17 +786,6 @@ html, body {
     <p class="password-hint">💡 一个特别的四位数日期</p>
     <button class="password-btn" onclick="checkPassword()">解 锁 惊 喜</button>
     <p class="password-error" id="pwdError"></p>
-  </div>
-</div>
-
-<!-- ===== STAGE 1: LOADING ===== -->
-<div class="stage hidden" id="stage-loading">
-  <div class="loading-box">
-    <p class="loading-text">🎁 准备惊喜中...</p>
-    <div class="loading-bar-wrap">
-      <div class="loading-bar" id="loadingBar"></div>
-    </div>
-    <p class="loading-pct" id="loadingPct">0%</p>
   </div>
 </div>
 
@@ -839,7 +849,7 @@ html, body {
 /* ========================================
    GLOBAL STATE
    ======================================== */
-const STAGES = ['password','loading','countdown','notes','cake','card'];
+const STAGES = ['password','countdown','notes','cake','card'];
 let currentStage = 'password';
 
 function showStage(name) {
@@ -1051,12 +1061,7 @@ function checkPassword() {
   if (pwd === '0322') {
     pwdAttempts = 0;
     document.getElementById('stage-password').classList.add('hidden');
-    if (audioReady) {
-      startCountdown();
-    } else {
-      showStage('loading');
-      waitForAudio();
-    }
+    startCountdown();
   } else {
     pwdAttempts++;
     if (pwdAttempts >= 3) {
@@ -1073,21 +1078,6 @@ function checkPassword() {
 /* ========================================
    STAGE 1: COUNTDOWN
    ======================================== */
-function waitForAudio() {
-  const bar = document.getElementById('loadingBar');
-  const pct = document.getElementById('loadingPct');
-  function poll() {
-    bar.style.width = audioLoadPct + '%';
-    pct.textContent = audioLoadPct + '%';
-    if (audioReady) {
-      setTimeout(() => startCountdown(), 400);
-    } else {
-      requestAnimationFrame(poll);
-    }
-  }
-  poll();
-}
-
 function startCountdown() {
   showStage('countdown');
   const cd = document.getElementById('countdownNum');
@@ -1656,43 +1646,11 @@ let audioBuffer = null;
 let sourceNode = null;
 let gainNode = null;
 let started = false;
-let audioReady = false;
-let audioLoadPct = 0;
 
-// page open -> download with progress -> decode to PCM
-fetch('bgm.mp3').then(response => {
-  const total = +response.headers.get('Content-Length');
-  const reader = response.body.getReader();
-  const chunks = [];
-  let received = 0;
-  function pump() {
-    return reader.read().then(({ done, value }) => {
-      if (done) { return new Blob(chunks).arrayBuffer(); }
-      chunks.push(value);
-      received += value.length;
-      audioLoadPct = total ? Math.round(received / total * 100) : Math.min(audioLoadPct + 5, 90);
-      return pump();
-    });
-  }
-  return pump();
-}).then(buf => {
-  audioLoadPct = 95;
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  audioCtx = ctx;
-  return ctx.decodeAudioData(buf);
-}).then(decoded => {
-  audioBuffer = decoded;
-  audioLoadPct = 100;
-  audioReady = true;
-}).catch(() => { audioReady = true; });
-
-function initAudio() {
-  startBgm();
-}
+function initAudio() { startBgm(); }
 function startBgm() {
   if (!audioCtx || !audioBuffer || started) return;
   started = true;
-  // resume context if suspended (browser policy)
   if (audioCtx.state === 'suspended') audioCtx.resume();
   sourceNode = audioCtx.createBufferSource();
   sourceNode.buffer = audioBuffer;
@@ -1730,7 +1688,6 @@ function restartAll() {
   document.getElementById('audioBtn').classList.add('hidden');
   if (sourceNode) { try { sourceNode.stop(); } catch(e) {} sourceNode = null; }
   started = false;
-  audioReady = true;
   gainNode = null;
   document.getElementById('audioBtn').classList.remove('playing');
   document.getElementById('audioBtn').textContent = '🎵';
@@ -1747,10 +1704,93 @@ function restartAll() {
 }
 
 /* ========================================
+   PAGE LOADER
+   ======================================== */
+(function pageLoader() {
+  const loader = document.getElementById('pageLoader');
+  const bar = document.getElementById('loaderBar');
+  const pct = document.getElementById('loaderPct');
+  const totalAssets = 1; // bgm.mp3 is the heavy one
+  let assetsLoaded = 0;
+  let bgmPercent = 0;
+
+  function update() {
+    // weighted: web assets 10%, bgm 90%
+    const webWeight = 0.1; const bgmWeight = 0.9;
+    const p = Math.round(webWeight * 100 + bgmWeight * bgmPercent);
+    const val = Math.min(p, 99);
+    bar.style.width = val + '%';
+    pct.textContent = val + '%';
+  }
+
+  // track actual page resources (CSS, JS, images etc.)
+  if (window.PerformanceObserver) {
+    try {
+      const po = new PerformanceObserver((list) => {
+        assetsLoaded += list.getEntries().length;
+        update();
+      });
+      po.observe({ type: 'resource', buffered: true });
+    } catch(e) {}
+  }
+
+  // fetch bgm with progress — this is the bulk of the loading
+  fetch('bgm.mp3').then(response => {
+    const total = +response.headers.get('Content-Length');
+    const reader = response.body.getReader();
+    const chunks = [];
+    let received = 0;
+    function pump() {
+      return reader.read().then(({ done, value }) => {
+        if (done) { return new Blob(chunks).arrayBuffer(); }
+        chunks.push(value);
+        received += value.length;
+        bgmPercent = total ? Math.round(received / total * 100) : Math.min(bgmPercent + 3, 99);
+        update();
+        return pump();
+      });
+    }
+    return pump();
+  }).then(buf => {
+    bgmPercent = 98;
+    update();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx = ctx;
+    return ctx.decodeAudioData(buf);
+  }).then(decoded => {
+    audioBuffer = decoded;
+    bgmPercent = 100;
+    update();
+    bar.style.width = '100%';
+    pct.textContent = '100%';
+    // fade out loader, show password
+    setTimeout(() => {
+      loader.classList.add('done');
+      showStage('password');
+      pwdInputs[0].focus();
+    }, 500);
+  }).catch(() => {
+    loader.classList.add('done');
+    showStage('password');
+    pwdInputs[0].focus();
+  });
+
+  // fallback: if bgm takes forever, show password after 12s anyway
+  setTimeout(() => {
+    if (!loader.classList.contains('done')) {
+      bar.style.width = '100%';
+      pct.textContent = '100%';
+      loader.classList.add('done');
+      showStage('password');
+      pwdInputs[0].focus();
+    }
+  }, 12000);
+})();
+
+/* ========================================
    INIT
    ======================================== */
-showStage('password');
-pwdInputs[0].focus();
+
 </script>
 </body>
 </html>
