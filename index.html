@@ -735,9 +735,7 @@ html, body {
 
 <!-- ===== AUDIO PLAYER ===== -->
 <div class="audio-player hidden" id="audioBtn" onclick="toggleAudio()" title="音乐">🎵</div>
-<audio id="bgm" loop preload="auto">
-  <source src="bgm.mp3" type="audio/mpeg">
-</audio>
+<audio id="bgm" loop playsinline></audio>
 
 <script>
 /* ========================================
@@ -1514,28 +1512,55 @@ function autoScrollCredits(el) {
 /* ========================================
    AUDIO
    ======================================== */
-function toggleAudio() {
-  const bgm = document.getElementById('bgm');
-  const btn = document.getElementById('audioBtn');
-  if (bgm.paused) {
-    bgm.play().then(() => {
-      btn.classList.add('playing');
-      btn.textContent = '🎶';
-    }).catch(() => { btn.textContent = '🔇'; });
-  } else {
-    bgm.pause();
-    btn.classList.remove('playing');
-    btn.textContent = '🎵';
-  }
+const bgmEl = document.getElementById('bgm');
+const btnAudio = document.getElementById('audioBtn');
+let bgmReady = false;
+let bgmFetching = false;
+
+// pre-buffer the whole MP3 into memory so WeChat won't stutter
+function ensureBgm() {
+  if (bgmReady || bgmFetching) return;
+  bgmFetching = true;
+  fetch('bgm.mp3')
+    .then(r => r.blob())
+    .then(blob => {
+      bgmEl.src = URL.createObjectURL(blob);
+      bgmReady = true;
+    })
+    .catch(() => {
+      // fallback: direct URL (may stutter on WeChat)
+      bgmEl.src = 'bgm.mp3';
+      bgmReady = true;
+    });
 }
 
 function initAudio() {
-  document.getElementById('bgm').play().then(() => {
-    document.getElementById('audioBtn').classList.add('playing');
-    document.getElementById('audioBtn').textContent = '🎶';
+  ensureBgm();
+  attemptPlay();
+}
+function attemptPlay() {
+  if (!bgmReady) { setTimeout(attemptPlay, 200); return; }
+  bgmEl.play().then(() => {
+    btnAudio.classList.add('playing');
+    btnAudio.textContent = '🎶';
   }).catch(() => {});
 }
 document.addEventListener('click', initAudio, { once: true });
+
+function toggleAudio() {
+  ensureBgm();
+  if (!bgmReady) return;
+  if (bgmEl.paused) {
+    bgmEl.play().then(() => {
+      btnAudio.classList.add('playing');
+      btnAudio.textContent = '🎶';
+    }).catch(() => { btnAudio.textContent = '🔇'; });
+  } else {
+    bgmEl.pause();
+    btnAudio.classList.remove('playing');
+    btnAudio.textContent = '🎵';
+  }
+}
 
 /* ========================================
    RESTART
