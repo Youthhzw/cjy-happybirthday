@@ -782,7 +782,9 @@ html, body {
 
 <!-- ===== AUDIO PLAYER ===== -->
 <div class="audio-player hidden" id="audioBtn" onclick="toggleAudio()" title="音乐">🎵</div>
-<audio id="bgm" loop playsinline></audio>
+<audio id="bgm" loop playsinline preload="auto">
+  <source src="bgm.mp3" type="audio/mpeg">
+</audio>
 
 <script>
 /* ========================================
@@ -1583,12 +1585,9 @@ const bgmEl = document.getElementById('bgm');
 const btnAudio = document.getElementById('audioBtn');
 let bgmReady = false;
 
-bgmEl.src = 'bgm.mp3';
-bgmEl.load();
-
 bgmEl.addEventListener('canplaythrough', () => { bgmReady = true; }, { once: true });
-// fallback: mark ready after 5s regardless
-setTimeout(() => { if (!bgmReady) bgmReady = true; }, 5000);
+// fallback: mark ready after 8s if canplaythrough didn't fire
+setTimeout(() => { if (!bgmReady) bgmReady = true; }, 8000);
 
 function initAudio() {
   if (!bgmReady) { setTimeout(initAudio, 300); return; }
