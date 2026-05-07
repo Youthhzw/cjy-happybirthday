@@ -1755,57 +1755,21 @@ function restartAll() {
   const loader = document.getElementById('pageLoader');
   const bar = document.getElementById('loaderBar');
   const pct = document.getElementById('loaderPct');
-  let realProgress = 0;       // bgm fetch actual (0-100)
-  let displayedProgress = 0;  // what the bar shows
-  const minDuration = 2500;   // bar animation takes at least this long
-  const maxDuration = 12000;  // absolute deadline
-  const startTime = performance.now();
+  let displayed = 0;
+  let done = false;
+  const duration = 2500;  // bar animation
+  const start = performance.now();
 
   function animFrame(now) {
-    const elapsed = now - startTime;
-    // cap: displayed cannot exceed what minDuration allows
-    const maxAllowed = Math.min(elapsed / minDuration, 1) * 100;
-    const target = Math.min(realProgress, maxAllowed);
-    const step = Math.max(0.5, (target - displayedProgress) * 0.15);
-    displayedProgress += step;
-    if (displayedProgress > 99.8 && realProgress >= 100 && elapsed >= minDuration) {
-      displayedProgress = 100;
-    }
-    bar.style.width = displayedProgress + '%';
-    pct.textContent = Math.round(displayedProgress) + '%';
-    if (displayedProgress < 100 && elapsed < maxDuration) {
+    const elapsed = now - start;
+    const target = done ? 100 : Math.min(92, (elapsed / duration) * 92);
+    displayed += (target - displayed) * 0.12;
+    if (displayed > 99.5 && done) displayed = 100;
+    bar.style.width = Math.min(displayed, target) + '%';
+    pct.textContent = Math.round(Math.min(displayed, target)) + '%';
+    if (displayed < 100 || !done) {
       requestAnimationFrame(animFrame);
-    }
-  }
-  requestAnimationFrame(animFrame);
-
-  // fetch bgm with progress — only store raw bytes for later decoding
-  fetch('bgm.mp3').then(response => {
-    const total = +response.headers.get('Content-Length');
-    const reader = response.body.getReader();
-    const chunks = [];
-    let received = 0;
-    function pump() {
-      return reader.read().then(({ done, value }) => {
-        if (done) { return new Blob(chunks).arrayBuffer(); }
-        chunks.push(value);
-        received += value.length;
-        realProgress = total ? Math.round(received / total * 100) : Math.min(realProgress + 3, 99);
-        return pump();
-      });
-    }
-    return pump();
-  }).then(buf => {
-    bgmRaw = buf;
-    realProgress = 100;
-  }).catch(() => {
-    realProgress = 100;
-  });
-
-  // completion poll — wait until bar visually full, then fade out
-  const readyPoll = setInterval(() => {
-    if (displayedProgress >= 100) {
-      clearInterval(readyPoll);
+    } else {
       setTimeout(() => {
         loader.classList.add('done');
         showStage('password');
@@ -1813,12 +1777,19 @@ function restartAll() {
         document.addEventListener('click', initAudio, { once: true });
       }, 400);
     }
-  }, 200);
+  }
+  requestAnimationFrame(animFrame);
 
-  // deadline: force realProgress=100 so bar can finish within maxDuration
-  setTimeout(() => {
-    if (displayedProgress < 100) { realProgress = 100; }
-  }, maxDuration - 500);
+  // download bgm in background — no stream reader, just get it
+  fetch('bgm.mp3').then(r => r.arrayBuffer()).then(buf => {
+    bgmRaw = buf;
+    done = true;
+  }).catch(() => {
+    done = true;
+  });
+
+  // safety: force done after 15s
+  setTimeout(() => { done = true; }, 15000);
 })();
 
 /* ========================================
